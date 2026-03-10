@@ -362,7 +362,9 @@ export function scanAnnouncements(
 
             // 3. Check view tag (redundant if already filtered by RPC, but safe)
             const expectedViewTag = extractViewTag(sh);
-            if (expectedViewTag !== normalizeFelt(ann.viewTag)) {
+            const normalizedAnnViewTag = normalizeFelt(ann.viewTag);
+
+            if (expectedViewTag !== normalizedAnnViewTag) {
                 continue;
             }
 
@@ -375,7 +377,10 @@ export function scanAnnouncements(
                 expectedStealthPub.x,
             ]);
 
-            if (normalizeFelt(expectedCommitment) !== normalizeFelt(ann.stealthCommitment)) {
+            const normalizedExpectedCommitment = normalizeFelt(expectedCommitment);
+            const normalizedAnnCommitment = normalizeFelt(ann.stealthCommitment);
+
+            if (normalizedExpectedCommitment !== normalizedAnnCommitment) {
                 continue;
             }
 
@@ -392,8 +397,8 @@ export function scanAnnouncements(
                 ipfsCid: ann.ipfsCid,
                 sharedSecretX: sharedSecret.x,
             });
-        } catch {
-            // Skip malformed announcements
+        } catch (e) {
+            console.error("  -> Error processing announcement:", e);
             continue;
         }
     }

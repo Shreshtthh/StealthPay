@@ -9,7 +9,6 @@
 
 // ─────────────────────── Configuration ───────────────────────
 
-const PINATA_JWT = process.env.NEXT_PUBLIC_PINATA_JWT || "";
 const PINATA_GATEWAY =
     process.env.NEXT_PUBLIC_PINATA_GATEWAY || "gateway.pinata.cloud";
 
@@ -83,7 +82,7 @@ export async function decryptMemo(
 // ─────────────────────── IPFS Upload/Fetch (Pinata) ───────────────────────
 
 /**
- * Upload encrypted data to IPFS via Pinata's pinning API.
+ * Upload encrypted data to IPFS via our backend proxy.
  * Returns the IPFS CID (content identifier) of the uploaded file.
  */
 export async function uploadToIPFS(data: Uint8Array): Promise<string> {
@@ -97,20 +96,14 @@ export async function uploadToIPFS(data: Uint8Array): Promise<string> {
     });
     formData.append("pinataMetadata", metadata);
 
-    const response = await fetch(
-        "https://api.pinata.cloud/pinning/pinFileToIPFS",
-        {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${PINATA_JWT}`,
-            },
-            body: formData,
-        }
-    );
+    const response = await fetch("/api/ipfs", {
+        method: "POST",
+        body: formData,
+    });
 
     if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(`Pinata upload failed: ${response.status} ${errorText}`);
+        throw new Error(`IPFS upload proxy failed: ${response.status} ${errorText}`);
     }
 
     const result = await response.json();

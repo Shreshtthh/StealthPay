@@ -255,15 +255,15 @@ The two-key design (spending + viewing) enables secure delegation:
 
 ## 7. Comparison with Ethereum Implementations
 
-| Feature | StealthPay (Starknet) | Umbra (Ethereum) | EIP-5564 Reference |
-|---------|-----------------------|-------------------|--------------------|
-| Curve | STARK (native) | secp256k1 | Any |
-| Hash | Poseidon (native) | keccak256 | Any |
-| On-chain ECDSA cost | Low (native) | Medium (precompile) | Varies |
-| View tags | Yes (indexed events) | Yes | Recommended |
-| Token support | ERC-20 | ETH + ERC-20 | Any |
-| Key registration | On-chain registry | ENS resolver | Flexible |
-| Claim mechanism | Contract escrow + sig | Direct transfer | Flexible |
+| Feature | StealthPay (Starknet) | Ethereum EIP-5564 |
+|---------|-----------------------|-------------------|
+| Curve | STARK (native) | secp256k1 |
+| Hash | Poseidon (native) | keccak256 |
+| On-chain ECDSA cost | Low (native) | Medium (precompile) |
+| View tags | Yes (indexed events) | Recommended |
+| Token support | ERC-20 (STRK, ETH) | ETH + ERC-20 |
+| Key registration | On-chain registry | Flexible (ENS, registry) |
+| Claim mechanism | Contract escrow + sig | Flexible |
 
 StealthPay's use of Starknet-native primitives (STARK curve, Poseidon) results in lower gas costs for on-chain verification compared to Ethereum equivalents.
 
@@ -303,6 +303,5 @@ StealthPay is a building block for a more private Starknet ecosystem, where rece
 1. Buterin, V. "An Incomplete Guide to Stealth Addresses." January 2023. https://vitalik.eth.limo/general/2023/01/20/stealth.html
 2. EIP-5564: Stealth Addresses. https://eips.ethereum.org/EIPS/eip-5564
 3. EIP-6538: Stealth Meta-Address Registry. https://eips.ethereum.org/EIPS/eip-6538
-4. Umbra Protocol. https://www.umbra.cash/
-5. Grassi, L. et al. "Poseidon: A New Hash Function for Zero-Knowledge Proof Systems." USENIX Security 2021.
-6. Starknet Documentation: STARK Curve. https://docs.starknet.io/
+4. Grassi, L. et al. "Poseidon: A New Hash Function for Zero-Knowledge Proof Systems." USENIX Security 2021.
+5. Starknet Documentation: STARK Curve. https://docs.starknet.io/

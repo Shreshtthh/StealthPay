@@ -45,10 +45,21 @@ import { green, red } from "./helpers/colorize-log";
  * @returns {Promise<void>}
  */
 const deployScript = async (): Promise<void> => {
+  // 1. Deploy the Announcer (no constructor args)
+  const { address: announcerAddress } = await deployContract({
+    contract: "StealthAnnouncer",
+  });
+
+  // 2. Deploy the Registry (no constructor args)
   await deployContract({
-    contract: "YourContract",
+    contract: "StealthRegistry",
+  });
+
+  // 3. Deploy StealthPay (needs announcer address)
+  await deployContract({
+    contract: "StealthPay",
     constructorArgs: {
-      owner: deployer.address,
+      announcer_address: announcerAddress,
     },
   });
 };

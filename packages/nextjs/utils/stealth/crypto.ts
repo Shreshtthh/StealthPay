@@ -339,7 +339,7 @@ export function computeStealthAddress(
  * This is the RECIPIENT's side:
  * 1. For each announcement, compute shared secret: p_view * E (ephemeral pub)
  * 2. Hash it: s_h = poseidon(S.x)
- * 3. Check view tag (fast pre-filter — already filtered by RPC ideally)
+ * 3. Check view tag (fast client-side pre-filter to skip heavy computation)
  * 4. Derive expected stealth pub: P_spend + s_h * G
  * 5. Compute expected commitment and compare
  * 6. If match → derive the stealth private key for claiming
@@ -360,7 +360,7 @@ export function scanAnnouncements(
             // 2. Hash shared secret
             const sh = hash.computePoseidonHash(sharedSecret.x, "0x0");
 
-            // 3. Check view tag (redundant if already filtered by RPC, but safe)
+            // 3. Check view tag (fast pre-filter — skip expensive EC add + Poseidon if mismatch)
             const expectedViewTag = extractViewTag(sh);
             const normalizedAnnViewTag = normalizeFelt(ann.viewTag);
 

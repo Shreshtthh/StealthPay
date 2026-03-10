@@ -118,11 +118,11 @@ StealthPay uses three contracts with distinct responsibilities:
 ```
 StealthRegistry          StealthAnnouncer          StealthPay
      |                        |                        |
-     | register(S.x, V.x)    |                        |
+     | register(S.x, V.x)     |                        |
      | get_meta_address()     |                        |
      | is_registered()        |                        |
-     |                        | announce(...)           |
-     |                        |   -> emit Announcement  |
+     |                        | announce(...)          |
+     |                        |   -> emit Announcement |
      |                        |                        |
      |                        |                        | send(c, R, tag, token, amt)
      |                        |<-  announce() call  ---|
@@ -216,7 +216,7 @@ When scanning, the client does the initial ECDH computation to get the shared se
 | Poseidon Hashes per scan | N | N / 256 |
 | Client-side CPU cost | O(N) Heavy | O(N) ECDH + O(N/256) Heavy |
 
-For a chain with 10,000 announcements, the recipient only performs ~39 ECDH operations instead of 10,000.
+For a chain with 10,000 announcements, the recipient still performs 10,000 lightweight ECDH operations, but only ~39 expensive point additions and Poseidon hashes — a massive reduction in client-side CPU cost.
 
 ---
 

@@ -28,7 +28,7 @@ pub mod StealthAnnouncer {
     }
 
     /// The core announcement event. Recipients scan these to discover payments.
-    /// `view_tag` is indexed (#[key]) so frontends can filter by tag via RPC,
+    /// `view_tag` is indexed (#[key]) for efficient event querying.
     /// avoiding expensive ECDH computation on every event.
     /// `ipfs_cid` stores a truncated IPFS CID for an encrypted memo (0 = no memo).
     #[derive(Drop, starknet::Event)]

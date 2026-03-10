@@ -61,6 +61,8 @@ export interface StealthPayment {
     ipfsCid?: string;
     /** Shared secret x-coordinate for memo decryption */
     sharedSecretX?: string;
+    /** Whether this payment has already been claimed on-chain */
+    isClaimed?: boolean;
 }
 
 /** ECDSA signature components for claiming a payment. */

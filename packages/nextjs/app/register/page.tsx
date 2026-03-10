@@ -63,10 +63,10 @@ const RegisterPage = () => {
 
     if (status !== "connected") {
         return (
-            <div className="flex items-center flex-col grow pt-10">
-                <div className="px-5 text-center">
-                    <h1 className="text-4xl font-bold mb-4">🔐 Register</h1>
-                    <p className="text-lg opacity-70">
+            <div className="flex items-center flex-col grow pt-10 animate-fade-in">
+                <div className="px-5 text-center max-w-md">
+                    <h1 className="text-4xl font-bold mb-4 text-gradient">Register</h1>
+                    <p className="text-base opacity-60">
                         Connect your wallet to register your stealth meta-address.
                     </p>
                 </div>
@@ -75,48 +75,55 @@ const RegisterPage = () => {
     }
 
     return (
-        <div className="flex items-center flex-col grow pt-10">
+        <div className="flex items-center flex-col grow pt-10 animate-fade-in">
             <div className="px-5 w-full max-w-2xl">
-                <h1 className="text-4xl font-bold text-center mb-8">
-                    🔐 Register Stealth Meta-Address
+                <p className="text-sm font-semibold tracking-widest uppercase opacity-50 text-center mb-2">
+                    One-time Setup
+                </p>
+                <h1 className="text-4xl font-bold text-center mb-8 text-gradient">
+                    Register Stealth Meta-Address
                 </h1>
 
                 {/* Step 1: Generate Keys */}
-                <div className="card bg-base-100 shadow-xl mb-6 border border-gradient">
-                    <div className="card-body">
-                        <h2 className="card-title">
-                            Step 1: Generate Keys
-                            {keys ? (
-                                <span className="badge badge-success">✓ Generated</span>
-                            ) : null}
-                        </h2>
-                        <p className="opacity-70 text-sm">
+                <div className="glass-card rounded-2xl mb-6">
+                    <div className="p-6">
+                        <div className="flex items-center gap-3 mb-3">
+                            <div className="step-circle">1</div>
+                            <h2 className="text-lg font-bold">Generate Keys</h2>
+                            {keys && (
+                                <span className="badge badge-success badge-sm ml-auto">
+                                    <span className="status-dot status-dot-success mr-1.5" />
+                                    Generated
+                                </span>
+                            )}
+                        </div>
+                        <p className="opacity-60 text-sm ml-[calc(2.5rem+0.75rem)]">
                             Generate your spending and viewing keypairs. These are stored
                             locally in your browser.
                         </p>
 
-                        {keys ? (
-                            <div className="mt-4 space-y-2">
-                                <div className="bg-base-200 rounded-lg p-3">
-                                    <p className="text-xs font-semibold opacity-50">
+                        {keys && (
+                            <div className="mt-4 space-y-2 ml-[calc(2.5rem+0.75rem)]">
+                                <div className="bg-base-300/50 rounded-lg p-3">
+                                    <p className="text-xs font-semibold opacity-40 mb-1">
                                         Spending Public Key (x)
                                     </p>
-                                    <p className="text-xs font-mono break-all">
+                                    <p className="text-xs font-mono break-all opacity-80">
                                         {keys.spendingPubKey.x}
                                     </p>
                                 </div>
-                                <div className="bg-base-200 rounded-lg p-3">
-                                    <p className="text-xs font-semibold opacity-50">
+                                <div className="bg-base-300/50 rounded-lg p-3">
+                                    <p className="text-xs font-semibold opacity-40 mb-1">
                                         Viewing Public Key (x)
                                     </p>
-                                    <p className="text-xs font-mono break-all">
+                                    <p className="text-xs font-mono break-all opacity-80">
                                         {keys.viewingPubKey.x}
                                     </p>
                                 </div>
                             </div>
-                        ) : null}
+                        )}
 
-                        <div className="card-actions justify-end mt-4">
+                        <div className="flex justify-end mt-4">
                             <button
                                 className="btn btn-primary"
                                 onClick={handleGenerateKeys}
@@ -133,29 +140,33 @@ const RegisterPage = () => {
                 </div>
 
                 {/* Step 2: Register On-Chain */}
-                <div className="card bg-base-100 shadow-xl border border-gradient">
-                    <div className="card-body">
-                        <h2 className="card-title">
-                            Step 2: Register on Starknet
-                            {isRegistered ? (
-                                <span className="badge badge-success">✓ Registered</span>
-                            ) : null}
-                        </h2>
-                        <p className="opacity-70 text-sm">
+                <div className="glass-card rounded-2xl">
+                    <div className="p-6">
+                        <div className="flex items-center gap-3 mb-3">
+                            <div className="step-circle">2</div>
+                            <h2 className="text-lg font-bold">Register on Starknet</h2>
+                            {isRegistered && (
+                                <span className="badge badge-success badge-sm ml-auto">
+                                    <span className="status-dot status-dot-success mr-1.5" />
+                                    Registered
+                                </span>
+                            )}
+                        </div>
+                        <p className="opacity-60 text-sm ml-[calc(2.5rem+0.75rem)]">
                             Publish your public keys to the on-chain registry so senders can
                             look up your stealth meta-address.
                         </p>
 
-                        {isRegistered ? (
-                            <div className="alert alert-success mt-4">
-                                <span>
-                                    Your meta-address is registered! Others can now send you
+                        {isRegistered && (
+                            <div className="alert alert-success mt-4 ml-[calc(2.5rem+0.75rem)]">
+                                <span className="text-sm">
+                                    Your meta-address is registered. Others can now send you
                                     private payments.
                                 </span>
                             </div>
-                        ) : null}
+                        )}
 
-                        <div className="card-actions justify-end mt-4">
+                        <div className="flex justify-end mt-4">
                             <button
                                 className="btn btn-primary"
                                 onClick={handleRegister}
@@ -171,14 +182,6 @@ const RegisterPage = () => {
                     </div>
                 </div>
 
-                {/* Security Note */}
-                <div className="alert alert-warning mt-6">
-                    <span className="text-sm">
-                        ⚠️ <strong>Testnet Demo:</strong> Keys are stored in localStorage
-                        for this demo. In production, keys should be derived from your wallet
-                        or encrypted.
-                    </span>
-                </div>
             </div>
         </div>
     );

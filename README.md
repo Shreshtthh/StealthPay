@@ -123,9 +123,9 @@ StealthPay/
 | **Yarn** | v1 or v2+ | `npm install -g yarn` |
 | **Scarb** | **2.13.2** | [via starkup](https://docs.starknet.io/) |
 | **Starknet Foundry** | Latest | [via starkup](https://docs.starknet.io/) |
-| **Starknet Wallet** | — | [Argent X](https://www.argent.xyz/argent-x/) or [Braavos](https://braavos.app/) |
+| **Starknet Wallet** | - | [Argent X](https://www.argent.xyz/argent-x/) or [Braavos](https://braavos.app/) |
 
-> ⚠️ **Scarb version matters.** The Sepolia sequencer uses Cairo 2.13.2 to compile Sierra → CASM. Using a different Scarb version locally will produce a different CASM hash, causing `Transaction execution error (code 41)` on deployment. Pin to **2.13.2** exactly.
+> **Scarb version matters.** The Sepolia sequencer uses Cairo 2.13.2 to compile Sierra to CASM. Using a different Scarb version locally will produce a different CASM hash, causing `Transaction execution error (code 41)` on deployment. Pin to **2.13.2** exactly.
 
 To install Scarb and Starknet Foundry together:
 
@@ -146,13 +146,13 @@ yarn install
 Run each command in a **separate terminal**:
 
 ```bash
-# Terminal 1 — Start local Starknet devnet
+# Terminal 1: Start local Starknet devnet
 yarn chain
 
-# Terminal 2 — Compile & deploy contracts to devnet
+# Terminal 2: Compile and deploy contracts to devnet
 yarn deploy
 
-# Terminal 3 — Start the Next.js frontend
+# Terminal 3: Start the Next.js frontend
 yarn start
 ```
 
@@ -170,7 +170,7 @@ Edit `deploy-sepolia-direct.ts` in the project root with your deployer credentia
 
 #### 2. Fund your deployer wallet
 
-Ensure your deployer wallet has **STRK** tokens — the script forces v3 transactions which use STRK for gas (not ETH).
+Ensure your deployer wallet has **STRK** tokens. The script forces v3 transactions which use STRK for gas (not ETH).
 
 #### 3. Deploy contracts
 
@@ -178,7 +178,7 @@ Ensure your deployer wallet has **STRK** tokens — the script forces v3 transac
 npx ts-node deploy-sepolia-direct.ts
 ```
 
-The script deploys **StealthAnnouncer** → **StealthRegistry** → **StealthPay** in order, automatically passing the announcer address into the StealthPay constructor.
+The script deploys **StealthAnnouncer**, then **StealthRegistry**, then **StealthPay** in order, automatically passing the announcer address into the StealthPay constructor.
 
 #### 4. Update deployed contract addresses
 
@@ -216,14 +216,12 @@ yarn test
 
 ## Usage
 
-### 1. Register (Recipient — one-time setup)
+### 1. Register (Recipient, one-time setup)
 
 Navigate to [`/register`](http://localhost:3000/register):
 
-1. Click **"Generate Keys"** — creates your spending + viewing keypairs (stored locally in your browser's localStorage)
-2. Click **"Register on Starknet"** — publishes the x-coordinates of your public keys to the on-chain `StealthRegistry`
-
-> ⚠️ **Demo note:** Keys are stored in localStorage for this testnet demo. In production, keys should be derived from your wallet signature or stored in encrypted storage.
+1. Click **"Generate Keys"**: creates your spending + viewing keypairs (stored locally in your browser's localStorage)
+2. Click **"Register on Starknet"**: publishes the x-coordinates of your public keys to the on-chain `StealthRegistry`
 
 ### 2. Send (Sender)
 
@@ -243,29 +241,51 @@ The app automatically:
 
 Navigate to [`/receive`](http://localhost:3000/receive):
 
-1. Click **"Scan for Payments"** — scans on-chain `Announcement` events using your viewing key
+1. Click **"Scan for Payments"**: scans on-chain `Announcement` events using your viewing key
 2. Review the list of detected payments (amount, token, commitment)
-3. Click **"Claim"** on any payment — signs a proof with the derived stealth private key and sends funds to your connected wallet
+3. Click **"Claim"** on any payment: signs a proof with the derived stealth private key and sends funds to your connected wallet
 
 ## Design Choices
 
 StealthPay is built on Scaffold-Stark 2 but makes several intentional architectural decisions to support the stealth address protocol:
 
-- **Custom contract hooks** — We use lightweight wrappers (`useStealthReadContract`, `useStealthWriteContract`) instead of the scaffold's generic hooks. Stealth contracts require runtime contract name resolution that bypasses the scaffold's compile-time type constraints, giving us more flexibility for dynamic contract interactions.
-- **Raw RPC event scanning** — The Receive page fetches `Announcement` events directly via `RpcProvider.getEvents()` rather than scaffold event hooks. Stealth scanning requires custom parsing of raw event data followed by client-side ECDH cryptography on each event — a processing pipeline that doesn't fit the scaffold's event abstraction.
-- **Direct multicall construction** — The Send page builds approve + send calls manually using `starknet.js` `Contract.populate()` and `useTransactor`, rather than the scaffold write hooks. This allows us to batch the ERC-20 approval and stealth payment into a single atomic multicall transaction.
-- **Client-side cryptography** — All stealth address math (ECDH shared secrets, key derivation, ECDSA signing) runs entirely in the browser using `starknet.js` EC utilities. The Cairo contracts only verify proofs — they never touch private keys or perform complex EC operations.
+- **Custom contract hooks.** We use lightweight wrappers (`useStealthReadContract`, `useStealthWriteContract`) instead of the scaffold's generic hooks. Stealth contracts require runtime contract name resolution that bypasses the scaffold's compile-time type constraints, giving us more flexibility for dynamic contract interactions.
+- **Raw RPC event scanning.** The Receive page fetches `Announcement` events directly via `RpcProvider.getEvents()` rather than scaffold event hooks. Stealth scanning requires custom parsing of raw event data followed by client-side ECDH cryptography on each event, a processing pipeline that doesn't fit the scaffold's event abstraction.
+- **Direct multicall construction.** The Send page builds approve + send calls manually using `starknet.js` `Contract.populate()` and `useTransactor`, rather than the scaffold write hooks. This allows us to batch the ERC-20 approval and stealth payment into a single atomic multicall transaction.
+- **Client-side cryptography.** All stealth address math (ECDH shared secrets, key derivation, ECDSA signing) runs entirely in the browser using `starknet.js` EC utilities. The Cairo contracts only verify proofs; they never touch private keys or perform complex EC operations.
 
-## Security Model
+## Privacy Model
 
-- **Spending keys** never leave the browser. They are stored in localStorage (encrypted storage recommended for production).
-- **Viewing keys** can only identify payments, not spend them. Safe to delegate to a scanning service.
+### What StealthPay hides
+
+- **Recipient identity.** The stealth commitment is cryptographically unlinkable to the recipient's registered address. No on-chain observer can determine who received a payment.
+- **Payment relationship.** There is no visible connection between the sender's `send()` call and the recipient's `claim()` call. They reference different commitments and happen at different times from different addresses.
+- **Claim destination.** The recipient can claim funds to any wallet, including a freshly generated one with no prior history.
+
+### What StealthPay does NOT hide
+
+- **Sender identity.** The sender's address is visible in the `send` transaction.
+- **Payment amount and token type.** The deposit amount and ERC-20 token address are recorded on-chain in both the deposit struct and the `Announcement` event.
+- **Timing.** Transaction timestamps are public.
+
+### Amount correlation and mitigation
+
+Because amounts are public, a statistical correlation attack is possible: if Alice deposits 42.698 STRK and a new wallet withdraws exactly 42.698 STRK a few hours later, an analyst can reasonably link those two transactions.
+
+**Immediate mitigation: standardized denominations.** The established approach (used by protocols like Tornado Cash) is to send funds in fixed denominations (e.g. 10, 100, 1000 STRK). If ten users each deposit 100 STRK in a given period and ten users each withdraw 100 STRK, it becomes statistically infeasible to determine which deposit corresponds to which withdrawal. StealthPay supports this pattern today with no protocol changes.
+
+**Roadmap: Pedersen commitments for amount hiding.** The natural next evolution is to integrate Pedersen commitment schemes into the deposit and claim flow. A Pedersen commitment `C = r*G + v*H` allows the contract to verify that the deposited amount matches the withdrawn amount *without ever revealing the actual value on-chain*. The sender would commit to the amount during `send()`, and the recipient would provide a zero-knowledge range proof during `claim()` demonstrating that the commitment opens to a valid, matching amount. This eliminates amount correlation entirely while preserving the contract's ability to enforce balance correctness. Starknet's native support for elliptic curve operations and Poseidon hashing makes this integration particularly efficient.
+
+### Key security
+
+- **Spending keys** never leave the browser. They are required to claim funds.
+- **Viewing keys** can only detect payments, not spend them. Safe to delegate to a scanning service for passive monitoring.
 - **ECDSA signatures** over the Poseidon commitment prove ownership of the stealth private key during claims.
 - **No trusted third parties.** All cryptography runs client-side. Contracts only verify proofs.
 
 ## Hackathon
 
-Built for the **Starknet Re{define} Hackathon 2026** — Privacy + Bitcoin Track.
+Built for the **Starknet Re{define} Hackathon 2026**, Privacy + Bitcoin Track.
 
 ## Inspiration
 

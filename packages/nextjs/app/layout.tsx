@@ -4,7 +4,7 @@ import "~~/styles/globals.css";
 import { ThemeProvider } from "~~/components/ThemeProvider";
 
 export const metadata: Metadata = {
-  title: "StealthPay — Private Payments on Starknet",
+  title: "StealthPay",
   description: "Stealth address protocol for private token transfers on Starknet",
   icons: "/logo.ico",
 };

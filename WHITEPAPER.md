@@ -277,8 +277,10 @@ Derive stealth keys from the connected wallet's signature over a fixed message, 
 ### 8.2 Relayer Network
 Fund claims through a relayer to avoid requiring the recipient to have gas tokens at the claim address, further improving privacy.
 
-### 8.3 Amount Hiding
-Integrate commitment schemes (e.g., Pedersen commitments) to hide transfer amounts on-chain.
+### 8.3 Amount Hiding via Pedersen Commitments
+Currently, payment amounts and token types are recorded in plaintext on-chain, making statistical amount correlation possible (e.g. matching a 42.698 STRK deposit with a 42.698 STRK withdrawal). The immediate mitigation is to use standardized denominations (10, 100, 1000 STRK), which creates a large anonymity set and makes deposit-withdrawal matching statistically infeasible.
+
+The long-term solution is to integrate Pedersen commitment schemes. A Pedersen commitment `C = r*G + v*H` (where `v` is the hidden amount and `r` is a blinding factor) allows the StealthPay contract to verify that the deposited amount matches the claimed amount without either value ever appearing on-chain. The sender commits to the amount during `send()`, and the recipient provides a zero-knowledge range proof during `claim()` demonstrating that the commitment opens to a valid, non-negative amount. Starknet's native elliptic curve builtins and Poseidon hashing make this integration particularly gas-efficient compared to equivalent constructions on Ethereum.
 
 ### 8.4 Multi-token Support
 Extend the protocol to support batch payments and native ETH alongside ERC-20 tokens.

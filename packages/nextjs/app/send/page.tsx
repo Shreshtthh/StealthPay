@@ -44,19 +44,22 @@ const SendPage = () => {
     >("idle");
     const [errorMsg, setErrorMsg] = useState("");
 
+    // Validate recipient address format (basic hex check)
+    const isValidAddress = /^0x[0-9a-fA-F]{1,64}$/.test(recipientAddress);
+
     // Look up recipient's meta-address from registry
     const { data: metaAddress } = useStealthReadContract({
         contractName: "StealthRegistry",
         functionName: "get_meta_address",
-        args: [recipientAddress || "0x0"],
-        enabled: !!recipientAddress,
+        args: [isValidAddress ? recipientAddress : "0x0"],
+        enabled: isValidAddress,
     });
 
     const { data: recipientRegistered } = useStealthReadContract({
         contractName: "StealthRegistry",
         functionName: "is_registered",
-        args: [recipientAddress || "0x0"],
-        enabled: !!recipientAddress,
+        args: [isValidAddress ? recipientAddress : "0x0"],
+        enabled: isValidAddress,
     });
 
     // Get StealthPay contract info for building multicall
@@ -187,7 +190,15 @@ const SendPage = () => {
                                     onChange={(e) => setRecipientAddress(e.target.value)}
                                 />
                             </div>
-                            {recipientAddress && recipientRegistered !== undefined && (
+                            {recipientAddress && !isValidAddress && (
+                                <label className="label pb-0">
+                                    <span className="label-text-alt flex items-center gap-1.5 text-error">
+                                        <span className="status-dot status-dot-error" />
+                                        Invalid Starknet address format
+                                    </span>
+                                </label>
+                            )}
+                            {recipientAddress && isValidAddress && recipientRegistered !== undefined && (
                                 <label className="label pb-0">
                                     <span className={`label-text-alt flex items-center gap-1.5 ${recipientRegistered ? "text-success" : "text-error"}`}>
                                         <span className={`status-dot ${recipientRegistered ? "status-dot-success" : "status-dot-error"}`} />
@@ -303,6 +314,7 @@ const SendPage = () => {
                                 onClick={handleSend}
                                 disabled={
                                     !recipientAddress ||
+                                    !isValidAddress ||
                                     !amount ||
                                     !recipientRegistered ||
                                     txStatus === "computing" ||

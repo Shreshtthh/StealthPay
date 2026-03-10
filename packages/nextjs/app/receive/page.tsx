@@ -14,7 +14,7 @@ import {
 } from "~~/utils/stealth/crypto";
 import { fetchAndDecryptMemo, feltToCidPrefix } from "~~/utils/stealth/ipfs";
 import type { Announcement, StealthPayment } from "~~/utils/stealth/types";
-import { RpcProvider } from "starknet";
+import { RpcProvider, Contract as StarknetJsContract } from "starknet";
 import { getRpcUrl } from "~~/services/web3/provider";
 import { notification } from "~~/utils/scaffold-stark";
 
@@ -29,6 +29,7 @@ const ReceivePage = () => {
     const [memoLoading, setMemoLoading] = useState(false);
 
     const { data: announcerData } = useStealthContractInfo("StealthAnnouncer");
+    const { data: stealthPayData } = useStealthContractInfo("StealthPay");
     const { targetNetwork } = useTargetNetwork();
 
     const publicClient = useMemo(() => {
@@ -131,14 +132,48 @@ const ReceivePage = () => {
             );
 
             console.log("Found payments:", found.length);
-            setPayments(found);
+            
+            // Check claim status for all payments and sort by newest first (reverse order)
+            setMemoLoading(true);
+            const processedPayments: StealthPayment[] = [];
+            
+            if (found.length > 0 && stealthPayData) {
+                // We use StarknetJsContract to efficiently call the read method
+                const stealthPayContract = new StarknetJsContract({
+                    abi: stealthPayData.abi,
+                    address: stealthPayData.address,
+                    providerOrAccount: publicClient,
+                });
+
+                for (const payment of found) {
+                    try {
+                        const depositData = await stealthPayContract.call("get_deposit", [payment.commitment]);
+                        // get_deposit returns a tuple: (token, amount, sender, is_claimed)
+                        const isClaimed = (depositData as any)?.["3"] ?? (depositData as any)?.is_claimed ?? false;
+                        
+                        // In Cairo/StarknetJS, booleans might be returned as BigInt(1) or true
+                        const claimedBool = typeof isClaimed === "boolean" ? isClaimed : (isClaimed as bigint === 1n);
+                        processedPayments.push({ ...payment, isClaimed: claimedBool });
+                    } catch (e) {
+                         console.error("Checking claim status failed for", payment.commitment, e);
+                         // Push it anyway if we can't verify, to be safe
+                         processedPayments.push({ ...payment, isClaimed: false });
+                    }
+                }
+            } else {
+                processedPayments.push(...found.map(p => ({ ...p, isClaimed: false })));
+            }
+
+            // Reverse to show newest (highest block number) first
+            processedPayments.reverse();
+
+            setPayments(processedPayments);
             setScanDone(true);
 
-            // Fetch and decrypt IPFS memos for payments that have a CID
-            if (found.length > 0) {
-                setMemoLoading(true);
+            // Fetch and decrypt IPFS memos for all payments that have a CID
+            if (processedPayments.length > 0) {
                 const updatedPayments = await Promise.all(
-                    found.map(async (payment) => {
+                    processedPayments.map(async (payment) => {
                         // Check if there is a non-zero CID
                         const cidFelt = payment.ipfsCid;
                         if (!cidFelt || cidFelt === "0x0" || BigInt(cidFelt) === 0n) {
@@ -159,14 +194,14 @@ const ReceivePage = () => {
                     })
                 );
                 setPayments(updatedPayments);
-                setMemoLoading(false);
             }
+            setMemoLoading(false);
         } catch (e) {
             console.error("Scan failed:", e);
         } finally {
             setIsScanning(false);
         }
-    }, [events]);
+    }, [events, stealthPayData, publicClient]);
 
     const handleClaim = async (payment: StealthPayment, idx: number) => {
         if (!address) return;
@@ -187,8 +222,10 @@ const ReceivePage = () => {
                 ],
             });
 
-            // Remove claimed payment from list
-            setPayments((prev) => prev.filter((_, i) => i !== idx));
+            // Mark payment as claimed in local state instead of removing it
+            setPayments((prev) => 
+                prev.map((p, i) => i === idx ? { ...p, isClaimed: true } : p)
+            );
         } catch (e: any) {
             console.error("Claim failed:", e);
             if (e.message && (e.message.includes("User rejected") || e.message.includes("User abort"))) {
@@ -305,16 +342,25 @@ const ReceivePage = () => {
                                                         <span className="text-sm font-normal opacity-50">tokens</span>
                                                     </p>
                                                 </div>
-                                                <button
-                                                    className="btn btn-primary"
-                                                    onClick={() => handleClaim(payment, idx)}
-                                                    disabled={claimingIdx === idx}
-                                                >
-                                                    {claimingIdx === idx && (
-                                                        <span className="loading loading-spinner loading-sm" />
-                                                    )}
-                                                    {claimingIdx === idx ? "Claiming..." : "Claim"}
-                                                </button>
+                                                {payment.isClaimed ? (
+                                                    <button
+                                                        className="btn btn-disabled"
+                                                        disabled
+                                                    >
+                                                        Claimed
+                                                    </button>
+                                                ) : (
+                                                    <button
+                                                        className="btn btn-primary"
+                                                        onClick={() => handleClaim(payment, idx)}
+                                                        disabled={claimingIdx === idx}
+                                                    >
+                                                        {claimingIdx === idx && (
+                                                            <span className="loading loading-spinner loading-sm" />
+                                                        )}
+                                                        {claimingIdx === idx ? "Claiming..." : "Claim"}
+                                                    </button>
+                                                )}
                                             </div>
                                             <div className="divider-gradient my-3" />
                                             <div className="grid grid-cols-1 gap-2">

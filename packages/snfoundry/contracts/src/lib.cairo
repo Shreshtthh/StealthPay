@@ -1,2 +1,3 @@
-pub mod your_contract;
-
+pub mod stealth_registry;
+pub mod stealth_announcer;
+pub mod stealth_pay;

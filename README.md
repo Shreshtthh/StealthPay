@@ -27,7 +27,18 @@ StealthPay implements the **ERC-5564 Stealth Address Protocol** natively on Star
 
 No one watching the chain can tell that Bob received the payment.
 
-## Architecture
+### The Missing Piece: IPFS Encrypted Memos
+
+A hidden transaction is only half the battle. If a business pays a freelancer privately, the freelancer still needs to know *what* the payment was for. If Alice repays Bob for dinner, Bob needs context. 
+
+Traditional blockchains force you to put transaction notes in public calldata, destroying privacy. 
+
+**StealthPay solves this by combining Starknet with IPFS:**
+When Alice sends a payment, she can attach a private memo. This memo is encrypted client-side using the AES-GCM standard, keyed by the exact same **shared secret** used to generate the stealth address. The encrypted ciphertext is then uploaded to IPFS.
+
+Because the shared secret is mathematically impossible to derive without the recipient's private viewing key, **only the recipient can decrypt and read the attached IPFS memo.** The blockchain simply points to a decentralized IPFS CID containing encrypted gibberish to the rest of the world. 
+
+### Architecture
 
 StealthPay consists of three Cairo smart contracts and a Next.js frontend with client-side cryptography.
 
@@ -36,7 +47,7 @@ StealthPay consists of three Cairo smart contracts and a Next.js frontend with c
 | Contract | Purpose |
 |----------|---------|
 | **StealthRegistry** | Stores users' stealth meta-addresses (spending + viewing public keys) |
-| **StealthAnnouncer** | Emits `Announcement` events with indexed view tags for efficient scanning |
+| **StealthAnnouncer** | Emits `Announcement` events with indexed view tags and IPFS CIDs |
 | **StealthPay** | Handles deposits (send) and withdrawals (claim) with ECDSA signature verification |
 
 ### Cryptographic Flow
@@ -56,19 +67,24 @@ SENDER                                 RECIPIENT
 4. Compute stealth public key:         4. Check: does hash(sh) match
    P_stealth = S + sh*G                    the view tag? (fast filter)
 
-5. Compute commitment:                 5. Compute P_stealth = S + sh*G
+5. Encrypt Memo (AES-GCM):             5. Fetch IPFS CID
+   ciphertext = encrypt(memo, sh)         Decrypt memo using shared secret
+   Upload ciphertext to IPFS
+
+6. Compute commitment:                 6. Compute P_stealth = S + sh*G
    c = poseidon(P_stealth.x)              Verify commitment matches
 
-6. Call StealthPay.send()              6. Derive stealth private key:
-   with (c, R, view_tag, token, amt)      p_stealth = s + sh (mod n)
+7. Call StealthPay.send()              7. Derive stealth private key:
+   with (c, R, view_tag, cid, etc)        p_stealth = s + sh (mod n)
 
-                                       7. Sign the commitment with p_stealth
-                                          Call StealthPay.claim()
+                                       8. Sign the commitment with p_stealth
+                                       9. Call StealthPay.claim()
 ```
 
-### View Tag Optimization
+### O(1) Client-Side Execution via View Tags
 
-Scanning every announcement requires an expensive ECDH computation per event. StealthPay uses **view tags** (the first byte of the shared secret hash) as a fast pre-filter. The `Announcement` event indexes the view tag, allowing the frontend to request only matching events via RPC. This reduces scanning cost by ~256x.
+* **The Mechanism:** To prevent the recipient's browser from crashing while scanning thousands of transactions, StealthPay implements a 1-byte "View Tag" derived from the ECDH shared secret.
+* **The Privacy Guarantee:** When scanning the chain, the recipient computes the shared secret and extracts the view tag. If the tag doesn't match the one in the emitted event, the client immediately discards it. This eliminates the need to perform heavy Elliptic Curve point additions and Poseidon hashing for ~99.6% (255/256) of irrelevant transactions, ensuring the protocol remains lightweight and production-ready in a browser environment without leaking static identifiers.
 
 ## Tech Stack
 
@@ -261,6 +277,7 @@ StealthPay is built on Scaffold-Stark 2 but makes several intentional architectu
 - **Recipient identity.** The stealth commitment is cryptographically unlinkable to the recipient's registered address. No on-chain observer can determine who received a payment.
 - **Payment relationship.** There is no visible connection between the sender's `send()` call and the recipient's `claim()` call. They reference different commitments and happen at different times from different addresses.
 - **Claim destination.** The recipient can claim funds to any wallet, including a freshly generated one with no prior history.
+- **Payment Context:** Any attached memos or invoices are AES-encrypted and stored on IPFS. Only the opaque CID is logged on-chain, keeping the context hidden from observers while remaining permanently accessible to the recipient.
 
 ### What StealthPay does NOT hide
 
@@ -282,6 +299,14 @@ Because amounts are public, a statistical correlation attack is possible: if Ali
 - **Viewing keys** can only detect payments, not spend them. Safe to delegate to a scanning service for passive monitoring.
 - **ECDSA signatures** over the Poseidon commitment prove ownership of the stealth private key during claims.
 - **No trusted third parties.** All cryptography runs client-side. Contracts only verify proofs.
+
+## Deployed Contracts (Sepolia)
+
+The project is live on the **Starknet Sepolia Testnet**. You can verify the contracts on any Starknet block explorer (like Voyager or StarkScan):
+
+*   **StealthRegistry:** `0x395c85e22f637e87571b997176ee5e10c1150642091204407b07e25262b74a8`
+*   **StealthAnnouncer:** `0x18da9e44c2f6a26e8972bde2e91eeda3ad9dad80bd7ac6817ec32a1b5c226d4`
+*   **StealthPay:** `0x3746f0ba6ea4b9399c70cd6ff0feb8e16775366b7024c75ee2b02365bb6e9c3`
 
 ## Hackathon
 

@@ -73,8 +73,9 @@ To send tokens privately to a recipient with meta-address `(S, V)`:
 2. **Compute shared secret**: `sh = H(r * V)` using Poseidon hash
 3. **Extract view tag**: `tag = sh[0:1]` (first byte of hash)
 4. **Compute stealth public key**: `P_stealth = S + sh * G`
-5. **Compute commitment**: `c = Poseidon(P_stealth.x)`
-6. **Call `StealthPay.send()`** with parameters `(c, R, tag, token, amount)`
+5. **Encrypt Memo**: Symmetrically encrypt any payment memo using AES-GCM keyed by the shared secret, upload the ciphertext to IPFS, and retrieve the CID.
+6. **Compute commitment**: `c = Poseidon(P_stealth.x)`
+7. **Call `StealthPay.send()`** with parameters `(c, R, tag, token, amount, ipfs_cid)`
 
 The contract:
 - Transfers tokens from sender to itself (escrow)
@@ -85,10 +86,10 @@ The contract:
 
 The recipient periodically scans `Announcement` events:
 
-1. **Filter by view tag**: The `view_tag` field is indexed in the event, allowing RPC-level filtering. This eliminates ~255/256 of events without any cryptographic computation.
-2. **Compute shared secret**: For matching events, compute `sh = H(v * R)` where `v` is the viewing private key and `R` is the ephemeral public key from the announcement.
-3. **Verify view tag**: Confirm `extractViewTag(sh) == event.view_tag`
+1. **Compute shared secret**: For each event, compute `sh = H(v * R)` where `v` is the viewing private key and `R` is the ephemeral public key from the announcement.
+2. **Verify view tag**: Confirm `extractViewTag(sh) == event.view_tag`. If it does not match, immediately discard the event.
 4. **Verify commitment**: Compute `P_stealth = S + sh * G` and check `Poseidon(P_stealth.x) == event.stealth_commitment`
+5. **Decrypt Memo**: If `ipfs_cid` is non-zero, fetch the encrypted payload from IPFS and decrypt it locally using the recovered shared secret.
 
 If both checks pass, the announcement represents a payment to this recipient.
 
@@ -176,13 +177,9 @@ Using the native curve means all on-chain verification (ECDSA, point operations)
 
 ### 4.3 Point Recovery
 
-The registry stores only x-coordinates to minimize storage costs. The full curve point is recovered client-side using:
+The registry stores only x-coordinates to minimize storage costs. The full curve point is recovered client-side by solving the curve equation `y^2 = x^3 + alpha*x + beta (mod p)`.
 
-```
-y = (x^3 + alpha*x + beta)^((p+1)/4) mod p
-```
-
-This works because the STARK field prime satisfies `p = 3 (mod 4)`, allowing efficient square root computation via modular exponentiation.
+Unlike curves where the prime `p ≡ 3 (mod 4)` (which allows a simple modular exponentiation shortcut), the STARK field prime satisfies `p ≡ 1 (mod 4)`. Therefore, StealthPay implements the Tonelli-Shanks algorithm client-side to efficiently compute the modular square root and recover the canonical y-coordinate.
 
 ### 4.4 ECDH Security
 
@@ -198,23 +195,26 @@ The Elliptic Curve Diffie-Hellman shared secret `sh = H(r * V) = H(v * R)` ensur
 
 ### 5.1 The Scanning Problem
 
-Without optimization, scanning N announcements requires N ECDH computations (each involving a full scalar multiplication on the STARK curve). For a chain with thousands of stealth payments, this becomes computationally expensive for browser-based clients.
+Scanning N announcements requires performing an ECDH computation (a full scalar multiplication on the STARK curve) for every single event. Worse, deriving the full stealth public key and generating the final Poseidon commitment involves another EC point addition and a Poseidon hash. For a chain with thousands of stealth payments, running all of these operations for every transaction would quickly crash browser-based clients.
 
-### 5.2 Solution: Indexed View Tags
+### 5.2 Solution: Client-Side View Tags
 
-Each announcement includes a `view_tag` (1 byte) derived from the shared secret. This tag is indexed in the Starknet event, enabling RPC-level filtering:
+Each announcement includes a `view_tag` (1 byte) derived from the shared secret:
 
 ```
 tag = first_byte(Poseidon(shared_secret.x))
 ```
 
+When scanning, the client does the initial ECDH computation to get the shared secret and extracts this 1-byte tag. If it doesn't match the event's tag, the client immediately discards the transaction. This eliminates the need to perform the subsequent, highly expensive EC point addition and Poseidon hashing for ~99.6% (255/256) of irrelevant transactions. 
+
 **Performance impact:**
 
 | Metric | Without View Tags | With View Tags |
 |--------|------------------|----------------|
-| ECDH computations per scan | N | N / 256 |
-| RPC query overhead | All events | Filtered events |
-| Client-side CPU cost | O(N) | O(N/256) |
+| ECDH computations per scan | N | N |
+| EC Point Additions per scan | N | N / 256 |
+| Poseidon Hashes per scan | N | N / 256 |
+| Client-side CPU cost | O(N) Heavy | O(N) ECDH + O(N/256) Heavy |
 
 For a chain with 10,000 announcements, the recipient only performs ~39 ECDH operations instead of 10,000.
 
@@ -227,6 +227,7 @@ For a chain with 10,000 announcements, the recipient only performs ~39 ECDH oper
 - **Recipient identity**: The stealth commitment and stealth address are unlinkable to the recipient's registered address
 - **Payment relationship**: No on-chain connection between sender and recipient
 - **Claim destination**: The recipient can claim to any address, including a fresh one
+- **Payment Context**: Any attached memos or invoices are AES-encrypted and stored on IPFS. Only the opaque CID is logged on-chain, keeping the context hidden from observers while remaining permanently accessible to the recipient.
 
 ### 6.2 What StealthPay Does NOT Hide
 

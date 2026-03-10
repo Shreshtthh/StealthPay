@@ -33,10 +33,14 @@
     "postcss": "^8.4.38"
   },
   "devDependencies": {
+    "@types/node": "^25.4.0",
     "daisyui": "^4.7.3",
     "husky": "^9.0.11",
     "pinst": "^3.0.0",
-    "prettier": "^3.2.5"
+    "prettier": "^3.2.5",
+    "starknet": "^9.4.2",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
   },
   "packageManager": "yarn@3.2.3",
   "overrides": {

@@ -1,18 +1,48 @@
-.vscode/**
+# Dependencies
 node_modules
-package-lock.json
-.idea
-
-# yarn / eslint
 .yarn/*
 !.yarn/patches
 !.yarn/plugins
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
-.eslintcache
-.DS_Store
-.vercel
 
+# Next.js
+packages/nextjs/.next/
+packages/nextjs/out/
+
+# Environment variables
 **/.env*
 !**/.env.example
+
+# IDE
+.vscode/**
+.idea
+.DS_Store
+
+# Build artifacts
+*.tsbuildinfo
+.eslintcache
+.vercel
+
+# Lock files (using yarn)
+package-lock.json
+
+# Cairo / Scarb build artifacts
+packages/snfoundry/contracts/target/
+
+# Starkli wallets (contain private keys!)
+**/starkli-wallets/
+**/*.keystore.json
+
+# Deployment artifacts
+deploy-sepolia-direct.ts
+
+# OS files
+Thumbs.db
+*.swp
+*.swo
+
+# Misc
+.cursorrules
+global_rules.md

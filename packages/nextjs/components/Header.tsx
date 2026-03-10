@@ -26,6 +26,18 @@ export const menuLinks: HeaderMenuLink[] = [
     href: "/",
   },
   {
+    label: "Register",
+    href: "/register",
+  },
+  {
+    label: "Send",
+    href: "/send",
+  },
+  {
+    label: "Receive",
+    href: "/receive",
+  },
+  {
     label: "Debug Contracts",
     href: "/debug",
     icon: <BugAntIcon className="h-4 w-4" />,
@@ -49,11 +61,10 @@ export const HeaderMenuLinks = () => {
             <Link
               href={href}
               passHref
-              className={`${
-                isActive
+              className={`${isActive
                   ? "bg-gradient-nav text-white! active:bg-gradient-nav shadow-md"
                   : ""
-              } py-1.5 px-3 text-sm rounded-full gap-2 grid grid-flow-col hover:bg-gradient-nav hover:text-white`}
+                } py-1.5 px-3 text-sm rounded-full gap-2 grid grid-flow-col hover:bg-gradient-nav hover:text-white`}
             >
               {icon}
               <span>{label}</span>
@@ -175,9 +186,8 @@ export const Header = () => {
         <CustomConnectButton />
         {/* <FaucetButton /> */}
         <SwitchTheme
-          className={`pointer-events-auto ${
-            isLocalNetwork ? "mb-1 lg:mb-0" : ""
-          }`}
+          className={`pointer-events-auto ${isLocalNetwork ? "mb-1 lg:mb-0" : ""
+            }`}
         />
       </div>
     </div>

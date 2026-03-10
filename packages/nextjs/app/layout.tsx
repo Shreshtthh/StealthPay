@@ -4,8 +4,8 @@ import "~~/styles/globals.css";
 import { ThemeProvider } from "~~/components/ThemeProvider";
 
 export const metadata: Metadata = {
-  title: "Scaffold-Stark",
-  description: "Fast track your starknet journey",
+  title: "StealthPay — Private Payments on Starknet",
+  description: "Stealth address protocol for private token transfers on Starknet",
   icons: "/logo.ico",
 };
 

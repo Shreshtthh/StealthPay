@@ -5,32 +5,14 @@
 
 const deployedContracts = {
   devnet: {
-    YourContract: {
+    StealthAnnouncer: {
       address:
-        "0x1923d7a1a6c39c69ad8da2359053d9d2afe92fe476af97963387f36471c4d9b",
+        "0x7b4889d9d01a8f64cb677345fc06bda58184c46bf9a1b46fab323d142b18577",
       abi: [
         {
           type: "impl",
-          name: "YourContractImpl",
-          interface_name: "contracts::your_contract::IYourContract",
-        },
-        {
-          type: "struct",
-          name: "core::byte_array::ByteArray",
-          members: [
-            {
-              name: "data",
-              type: "core::array::Array::<core::bytes_31::bytes31>",
-            },
-            {
-              name: "pending_word",
-              type: "core::felt252",
-            },
-            {
-              name: "pending_word_len",
-              type: "core::integer::u32",
-            },
-          ],
+          name: "StealthAnnouncerImpl",
+          interface_name: "contracts::stealth_announcer::IStealthAnnouncer",
         },
         {
           type: "struct",
@@ -47,16 +29,236 @@ const deployedContracts = {
           ],
         },
         {
-          type: "enum",
-          name: "core::option::Option::<core::integer::u256>",
-          variants: [
+          type: "interface",
+          name: "contracts::stealth_announcer::IStealthAnnouncer",
+          items: [
             {
-              name: "Some",
-              type: "core::integer::u256",
+              type: "function",
+              name: "announce",
+              inputs: [
+                {
+                  name: "ephemeral_pub_x",
+                  type: "core::felt252",
+                },
+                {
+                  name: "ephemeral_pub_y",
+                  type: "core::felt252",
+                },
+                {
+                  name: "stealth_commitment",
+                  type: "core::felt252",
+                },
+                {
+                  name: "view_tag",
+                  type: "core::felt252",
+                },
+                {
+                  name: "token",
+                  type: "core::starknet::contract_address::ContractAddress",
+                },
+                {
+                  name: "amount",
+                  type: "core::integer::u256",
+                },
+              ],
+              outputs: [],
+              state_mutability: "external",
+            },
+          ],
+        },
+        {
+          type: "event",
+          name: "contracts::stealth_announcer::StealthAnnouncer::Announcement",
+          kind: "struct",
+          members: [
+            {
+              name: "view_tag",
+              type: "core::felt252",
+              kind: "key",
             },
             {
-              name: "None",
+              name: "stealth_commitment",
+              type: "core::felt252",
+              kind: "key",
+            },
+            {
+              name: "ephemeral_pub_x",
+              type: "core::felt252",
+              kind: "data",
+            },
+            {
+              name: "ephemeral_pub_y",
+              type: "core::felt252",
+              kind: "data",
+            },
+            {
+              name: "token",
+              type: "core::starknet::contract_address::ContractAddress",
+              kind: "data",
+            },
+            {
+              name: "amount",
+              type: "core::integer::u256",
+              kind: "data",
+            },
+            {
+              name: "caller",
+              type: "core::starknet::contract_address::ContractAddress",
+              kind: "data",
+            },
+          ],
+        },
+        {
+          type: "event",
+          name: "contracts::stealth_announcer::StealthAnnouncer::Event",
+          kind: "enum",
+          variants: [
+            {
+              name: "Announcement",
+              type: "contracts::stealth_announcer::StealthAnnouncer::Announcement",
+              kind: "nested",
+            },
+          ],
+        },
+      ],
+      classHash:
+        "0x6453486871b45f745d8bb13f569130147239ec7de91a4fd46e7b22b827c16a9",
+    },
+    StealthRegistry: {
+      address:
+        "0x3fc97833306e586a1d1e7d0a40d03217fc4a806b8012b91b3bafb8a13c5b6d1",
+      abi: [
+        {
+          type: "impl",
+          name: "StealthRegistryImpl",
+          interface_name: "contracts::stealth_registry::IStealthRegistry",
+        },
+        {
+          type: "enum",
+          name: "core::bool",
+          variants: [
+            {
+              name: "False",
               type: "()",
+            },
+            {
+              name: "True",
+              type: "()",
+            },
+          ],
+        },
+        {
+          type: "interface",
+          name: "contracts::stealth_registry::IStealthRegistry",
+          items: [
+            {
+              type: "function",
+              name: "register",
+              inputs: [
+                {
+                  name: "spend_pub_x",
+                  type: "core::felt252",
+                },
+                {
+                  name: "view_pub_x",
+                  type: "core::felt252",
+                },
+              ],
+              outputs: [],
+              state_mutability: "external",
+            },
+            {
+              type: "function",
+              name: "get_meta_address",
+              inputs: [
+                {
+                  name: "user",
+                  type: "core::starknet::contract_address::ContractAddress",
+                },
+              ],
+              outputs: [
+                {
+                  type: "(core::felt252, core::felt252)",
+                },
+              ],
+              state_mutability: "view",
+            },
+            {
+              type: "function",
+              name: "is_registered",
+              inputs: [
+                {
+                  name: "user",
+                  type: "core::starknet::contract_address::ContractAddress",
+                },
+              ],
+              outputs: [
+                {
+                  type: "core::bool",
+                },
+              ],
+              state_mutability: "view",
+            },
+          ],
+        },
+        {
+          type: "event",
+          name: "contracts::stealth_registry::StealthRegistry::MetaAddressRegistered",
+          kind: "struct",
+          members: [
+            {
+              name: "user",
+              type: "core::starknet::contract_address::ContractAddress",
+              kind: "key",
+            },
+            {
+              name: "spend_pub_x",
+              type: "core::felt252",
+              kind: "data",
+            },
+            {
+              name: "view_pub_x",
+              type: "core::felt252",
+              kind: "data",
+            },
+          ],
+        },
+        {
+          type: "event",
+          name: "contracts::stealth_registry::StealthRegistry::Event",
+          kind: "enum",
+          variants: [
+            {
+              name: "MetaAddressRegistered",
+              type: "contracts::stealth_registry::StealthRegistry::MetaAddressRegistered",
+              kind: "nested",
+            },
+          ],
+        },
+      ],
+      classHash:
+        "0x932fbd6fb89b5681af368e008f24fdfc08041ef4b8470a5646504485de9292",
+    },
+    StealthPay: {
+      address:
+        "0x7223a789c1f9fe9baf3ab9f123bc11dadb55849a98c5b57c64d184256b876c8",
+      abi: [
+        {
+          type: "impl",
+          name: "StealthPayImpl",
+          interface_name: "contracts::stealth_pay::IStealthPay",
+        },
+        {
+          type: "struct",
+          name: "core::integer::u256",
+          members: [
+            {
+              name: "low",
+              type: "core::integer::u128",
+            },
+            {
+              name: "high",
+              type: "core::integer::u128",
             },
           ],
         },
@@ -76,81 +278,62 @@ const deployedContracts = {
         },
         {
           type: "interface",
-          name: "contracts::your_contract::IYourContract",
+          name: "contracts::stealth_pay::IStealthPay",
           items: [
             {
               type: "function",
-              name: "greeting",
-              inputs: [],
-              outputs: [
-                {
-                  type: "core::byte_array::ByteArray",
-                },
-              ],
-              state_mutability: "view",
-            },
-            {
-              type: "function",
-              name: "set_greeting",
+              name: "send",
               inputs: [
                 {
-                  name: "new_greeting",
-                  type: "core::byte_array::ByteArray",
+                  name: "stealth_commitment",
+                  type: "core::felt252",
                 },
                 {
-                  name: "amount_strk",
-                  type: "core::option::Option::<core::integer::u256>",
+                  name: "ephemeral_pub_x",
+                  type: "core::felt252",
                 },
-              ],
-              outputs: [],
-              state_mutability: "external",
-            },
-            {
-              type: "function",
-              name: "withdraw",
-              inputs: [],
-              outputs: [],
-              state_mutability: "external",
-            },
-            {
-              type: "function",
-              name: "premium",
-              inputs: [],
-              outputs: [
                 {
-                  type: "core::bool",
+                  name: "ephemeral_pub_y",
+                  type: "core::felt252",
                 },
-              ],
-              state_mutability: "view",
-            },
-          ],
-        },
-        {
-          type: "impl",
-          name: "OwnableImpl",
-          interface_name: "openzeppelin_access::ownable::interface::IOwnable",
-        },
-        {
-          type: "interface",
-          name: "openzeppelin_access::ownable::interface::IOwnable",
-          items: [
-            {
-              type: "function",
-              name: "owner",
-              inputs: [],
-              outputs: [
                 {
+                  name: "view_tag",
+                  type: "core::felt252",
+                },
+                {
+                  name: "token",
                   type: "core::starknet::contract_address::ContractAddress",
                 },
+                {
+                  name: "amount",
+                  type: "core::integer::u256",
+                },
               ],
-              state_mutability: "view",
+              outputs: [],
+              state_mutability: "external",
             },
             {
               type: "function",
-              name: "transfer_ownership",
+              name: "claim",
               inputs: [
                 {
-                  name: "new_owner",
+                  name: "stealth_commitment",
+                  type: "core::felt252",
+                },
+                {
+                  name: "stealth_pub_x",
+                  type: "core::felt252",
+                },
+                {
+                  name: "signature_r",
+                  type: "core::felt252",
+                },
+                {
+                  name: "signature_s",
+                  type: "core::felt252",
+                },
+                {
+                  name: "recipient",
                   type: "core::starknet::contract_address::ContractAddress",
                 },
               ],
@@ -159,10 +342,30 @@ const deployedContracts = {
             },
             {
               type: "function",
-              name: "renounce_ownership",
+              name: "get_deposit",
+              inputs: [
+                {
+                  name: "commitment",
+                  type: "core::felt252",
+                },
+              ],
+              outputs: [
+                {
+                  type: "(core::starknet::contract_address::ContractAddress, core::integer::u256, core::starknet::contract_address::ContractAddress, core::bool)",
+                },
+              ],
+              state_mutability: "view",
+            },
+            {
+              type: "function",
+              name: "get_announcer",
               inputs: [],
-              outputs: [],
-              state_mutability: "external",
+              outputs: [
+                {
+                  type: "core::starknet::contract_address::ContractAddress",
+                },
+              ],
+              state_mutability: "view",
             },
           ],
         },
@@ -171,138 +374,91 @@ const deployedContracts = {
           name: "constructor",
           inputs: [
             {
-              name: "owner",
+              name: "announcer_address",
               type: "core::starknet::contract_address::ContractAddress",
             },
           ],
         },
         {
           type: "event",
-          name: "openzeppelin_access::ownable::ownable::OwnableComponent::OwnershipTransferred",
+          name: "contracts::stealth_pay::StealthPay::PaymentSent",
           kind: "struct",
           members: [
             {
-              name: "previous_owner",
+              name: "commitment",
+              type: "core::felt252",
+              kind: "key",
+            },
+            {
+              name: "token",
               type: "core::starknet::contract_address::ContractAddress",
-              kind: "key",
-            },
-            {
-              name: "new_owner",
-              type: "core::starknet::contract_address::ContractAddress",
-              kind: "key",
-            },
-          ],
-        },
-        {
-          type: "event",
-          name: "openzeppelin_access::ownable::ownable::OwnableComponent::OwnershipTransferStarted",
-          kind: "struct",
-          members: [
-            {
-              name: "previous_owner",
-              type: "core::starknet::contract_address::ContractAddress",
-              kind: "key",
-            },
-            {
-              name: "new_owner",
-              type: "core::starknet::contract_address::ContractAddress",
-              kind: "key",
-            },
-          ],
-        },
-        {
-          type: "event",
-          name: "openzeppelin_access::ownable::ownable::OwnableComponent::Event",
-          kind: "enum",
-          variants: [
-            {
-              name: "OwnershipTransferred",
-              type: "openzeppelin_access::ownable::ownable::OwnableComponent::OwnershipTransferred",
-              kind: "nested",
-            },
-            {
-              name: "OwnershipTransferStarted",
-              type: "openzeppelin_access::ownable::ownable::OwnableComponent::OwnershipTransferStarted",
-              kind: "nested",
-            },
-          ],
-        },
-        {
-          type: "event",
-          name: "contracts::your_contract::YourContract::GreetingChanged",
-          kind: "struct",
-          members: [
-            {
-              name: "greeting_setter",
-              type: "core::starknet::contract_address::ContractAddress",
-              kind: "key",
-            },
-            {
-              name: "new_greeting",
-              type: "core::byte_array::ByteArray",
-              kind: "key",
-            },
-            {
-              name: "premium",
-              type: "core::bool",
               kind: "data",
             },
             {
-              name: "value",
-              type: "core::option::Option::<core::integer::u256>",
+              name: "amount",
+              type: "core::integer::u256",
+              kind: "data",
+            },
+            {
+              name: "sender",
+              type: "core::starknet::contract_address::ContractAddress",
               kind: "data",
             },
           ],
         },
         {
           type: "event",
-          name: "contracts::your_contract::YourContract::Event",
+          name: "contracts::stealth_pay::StealthPay::PaymentClaimed",
+          kind: "struct",
+          members: [
+            {
+              name: "commitment",
+              type: "core::felt252",
+              kind: "key",
+            },
+            {
+              name: "recipient",
+              type: "core::starknet::contract_address::ContractAddress",
+              kind: "data",
+            },
+            {
+              name: "amount",
+              type: "core::integer::u256",
+              kind: "data",
+            },
+          ],
+        },
+        {
+          type: "event",
+          name: "contracts::stealth_pay::StealthPay::Event",
           kind: "enum",
           variants: [
             {
-              name: "OwnableEvent",
-              type: "openzeppelin_access::ownable::ownable::OwnableComponent::Event",
-              kind: "flat",
+              name: "PaymentSent",
+              type: "contracts::stealth_pay::StealthPay::PaymentSent",
+              kind: "nested",
             },
             {
-              name: "GreetingChanged",
-              type: "contracts::your_contract::YourContract::GreetingChanged",
+              name: "PaymentClaimed",
+              type: "contracts::stealth_pay::StealthPay::PaymentClaimed",
               kind: "nested",
             },
           ],
         },
       ],
       classHash:
-        "0x73e64394744804c476eb7a4ad56902d49e77565ad413e6a34726b4914cc4d1b",
+        "0x7aca503a238fed048bf58ea323a917872f88e1c155eb8ead2f583357ebcf440",
     },
   },
   sepolia: {
-    YourContract: {
+    StealthAnnouncer: {
       address:
-        "0x13fb0e8e1e3a8473422d70620ab9bba6fb1b33c643881fa08e0fae2c2efa54a",
+        "0x71bd0f74c0ee290937ed687b5d8da9cc7b3d70ba2df1161492b74d5022b98dc",
       abi: [
         {
           type: "impl",
-          name: "YourContractImpl",
-          interface_name: "contracts::your_contract::IYourContract",
-        },
-        {
-          type: "struct",
-          name: "core::byte_array::ByteArray",
-          members: [
-            {
-              name: "data",
-              type: "core::array::Array::<core::bytes_31::bytes31>",
-            },
-            {
-              name: "pending_word",
-              type: "core::felt252",
-            },
-            {
-              name: "pending_word_len",
-              type: "core::integer::u32",
-            },
-          ],
+          name: "StealthAnnouncerImpl",
+          interface_name: "contracts::stealth_announcer::IStealthAnnouncer",
         },
         {
           type: "struct",
@@ -319,16 +475,236 @@ const deployedContracts = {
           ],
         },
         {
-          type: "enum",
-          name: "core::option::Option::<core::integer::u256>",
-          variants: [
+          type: "interface",
+          name: "contracts::stealth_announcer::IStealthAnnouncer",
+          items: [
             {
-              name: "Some",
-              type: "core::integer::u256",
+              type: "function",
+              name: "announce",
+              inputs: [
+                {
+                  name: "ephemeral_pub_x",
+                  type: "core::felt252",
+                },
+                {
+                  name: "ephemeral_pub_y",
+                  type: "core::felt252",
+                },
+                {
+                  name: "stealth_commitment",
+                  type: "core::felt252",
+                },
+                {
+                  name: "view_tag",
+                  type: "core::felt252",
+                },
+                {
+                  name: "token",
+                  type: "core::starknet::contract_address::ContractAddress",
+                },
+                {
+                  name: "amount",
+                  type: "core::integer::u256",
+                },
+              ],
+              outputs: [],
+              state_mutability: "external",
+            },
+          ],
+        },
+        {
+          type: "event",
+          name: "contracts::stealth_announcer::StealthAnnouncer::Announcement",
+          kind: "struct",
+          members: [
+            {
+              name: "view_tag",
+              type: "core::felt252",
+              kind: "key",
             },
             {
-              name: "None",
+              name: "stealth_commitment",
+              type: "core::felt252",
+              kind: "key",
+            },
+            {
+              name: "ephemeral_pub_x",
+              type: "core::felt252",
+              kind: "data",
+            },
+            {
+              name: "ephemeral_pub_y",
+              type: "core::felt252",
+              kind: "data",
+            },
+            {
+              name: "token",
+              type: "core::starknet::contract_address::ContractAddress",
+              kind: "data",
+            },
+            {
+              name: "amount",
+              type: "core::integer::u256",
+              kind: "data",
+            },
+            {
+              name: "caller",
+              type: "core::starknet::contract_address::ContractAddress",
+              kind: "data",
+            },
+          ],
+        },
+        {
+          type: "event",
+          name: "contracts::stealth_announcer::StealthAnnouncer::Event",
+          kind: "enum",
+          variants: [
+            {
+              name: "Announcement",
+              type: "contracts::stealth_announcer::StealthAnnouncer::Announcement",
+              kind: "nested",
+            },
+          ],
+        },
+      ],
+      classHash:
+        "0x4c8bba7722ee2c85fde9ed22704319fe77a42bb635a49856f3574b1a95fc14a",
+    },
+    StealthRegistry: {
+      address:
+        "0x166f89e2e9b0499a28fbde2dc754c72ca986456101cc5481b301d4724d3495c",
+      abi: [
+        {
+          type: "impl",
+          name: "StealthRegistryImpl",
+          interface_name: "contracts::stealth_registry::IStealthRegistry",
+        },
+        {
+          type: "enum",
+          name: "core::bool",
+          variants: [
+            {
+              name: "False",
               type: "()",
+            },
+            {
+              name: "True",
+              type: "()",
+            },
+          ],
+        },
+        {
+          type: "interface",
+          name: "contracts::stealth_registry::IStealthRegistry",
+          items: [
+            {
+              type: "function",
+              name: "register",
+              inputs: [
+                {
+                  name: "spend_pub_x",
+                  type: "core::felt252",
+                },
+                {
+                  name: "view_pub_x",
+                  type: "core::felt252",
+                },
+              ],
+              outputs: [],
+              state_mutability: "external",
+            },
+            {
+              type: "function",
+              name: "get_meta_address",
+              inputs: [
+                {
+                  name: "user",
+                  type: "core::starknet::contract_address::ContractAddress",
+                },
+              ],
+              outputs: [
+                {
+                  type: "(core::felt252, core::felt252)",
+                },
+              ],
+              state_mutability: "view",
+            },
+            {
+              type: "function",
+              name: "is_registered",
+              inputs: [
+                {
+                  name: "user",
+                  type: "core::starknet::contract_address::ContractAddress",
+                },
+              ],
+              outputs: [
+                {
+                  type: "core::bool",
+                },
+              ],
+              state_mutability: "view",
+            },
+          ],
+        },
+        {
+          type: "event",
+          name: "contracts::stealth_registry::StealthRegistry::MetaAddressRegistered",
+          kind: "struct",
+          members: [
+            {
+              name: "user",
+              type: "core::starknet::contract_address::ContractAddress",
+              kind: "key",
+            },
+            {
+              name: "spend_pub_x",
+              type: "core::felt252",
+              kind: "data",
+            },
+            {
+              name: "view_pub_x",
+              type: "core::felt252",
+              kind: "data",
+            },
+          ],
+        },
+        {
+          type: "event",
+          name: "contracts::stealth_registry::StealthRegistry::Event",
+          kind: "enum",
+          variants: [
+            {
+              name: "MetaAddressRegistered",
+              type: "contracts::stealth_registry::StealthRegistry::MetaAddressRegistered",
+              kind: "nested",
+            },
+          ],
+        },
+      ],
+      classHash:
+        "0x5a2bcf916f45751f6bff858ad7e10cb85e5153e8238383c9d4fcd40ebaaffde",
+    },
+    StealthPay: {
+      address:
+        "0x7e16306f400c178dea90be2d01460cd217d655b07af495e1049a51ae323585a",
+      abi: [
+        {
+          type: "impl",
+          name: "StealthPayImpl",
+          interface_name: "contracts::stealth_pay::IStealthPay",
+        },
+        {
+          type: "struct",
+          name: "core::integer::u256",
+          members: [
+            {
+              name: "low",
+              type: "core::integer::u128",
+            },
+            {
+              name: "high",
+              type: "core::integer::u128",
             },
           ],
         },
@@ -348,81 +724,62 @@ const deployedContracts = {
         },
         {
           type: "interface",
-          name: "contracts::your_contract::IYourContract",
+          name: "contracts::stealth_pay::IStealthPay",
           items: [
             {
               type: "function",
-              name: "greeting",
-              inputs: [],
-              outputs: [
-                {
-                  type: "core::byte_array::ByteArray",
-                },
-              ],
-              state_mutability: "view",
-            },
-            {
-              type: "function",
-              name: "set_greeting",
+              name: "send",
               inputs: [
                 {
-                  name: "new_greeting",
-                  type: "core::byte_array::ByteArray",
+                  name: "stealth_commitment",
+                  type: "core::felt252",
                 },
                 {
-                  name: "amount_strk",
-                  type: "core::option::Option::<core::integer::u256>",
+                  name: "ephemeral_pub_x",
+                  type: "core::felt252",
                 },
-              ],
-              outputs: [],
-              state_mutability: "external",
-            },
-            {
-              type: "function",
-              name: "withdraw",
-              inputs: [],
-              outputs: [],
-              state_mutability: "external",
-            },
-            {
-              type: "function",
-              name: "premium",
-              inputs: [],
-              outputs: [
                 {
-                  type: "core::bool",
+                  name: "ephemeral_pub_y",
+                  type: "core::felt252",
                 },
-              ],
-              state_mutability: "view",
-            },
-          ],
-        },
-        {
-          type: "impl",
-          name: "OwnableImpl",
-          interface_name: "openzeppelin_access::ownable::interface::IOwnable",
-        },
-        {
-          type: "interface",
-          name: "openzeppelin_access::ownable::interface::IOwnable",
-          items: [
-            {
-              type: "function",
-              name: "owner",
-              inputs: [],
-              outputs: [
                 {
+                  name: "view_tag",
+                  type: "core::felt252",
+                },
+                {
+                  name: "token",
                   type: "core::starknet::contract_address::ContractAddress",
                 },
+                {
+                  name: "amount",
+                  type: "core::integer::u256",
+                },
               ],
-              state_mutability: "view",
+              outputs: [],
+              state_mutability: "external",
             },
             {
               type: "function",
-              name: "transfer_ownership",
+              name: "claim",
               inputs: [
                 {
-                  name: "new_owner",
+                  name: "stealth_commitment",
+                  type: "core::felt252",
+                },
+                {
+                  name: "stealth_pub_x",
+                  type: "core::felt252",
+                },
+                {
+                  name: "signature_r",
+                  type: "core::felt252",
+                },
+                {
+                  name: "signature_s",
+                  type: "core::felt252",
+                },
+                {
+                  name: "recipient",
                   type: "core::starknet::contract_address::ContractAddress",
                 },
               ],
@@ -431,10 +788,30 @@ const deployedContracts = {
             },
             {
               type: "function",
-              name: "renounce_ownership",
+              name: "get_deposit",
+              inputs: [
+                {
+                  name: "commitment",
+                  type: "core::felt252",
+                },
+              ],
+              outputs: [
+                {
+                  type: "(core::starknet::contract_address::ContractAddress, core::integer::u256, core::starknet::contract_address::ContractAddress, core::bool)",
+                },
+              ],
+              state_mutability: "view",
+            },
+            {
+              type: "function",
+              name: "get_announcer",
               inputs: [],
-              outputs: [],
-              state_mutability: "external",
+              outputs: [
+                {
+                  type: "core::starknet::contract_address::ContractAddress",
+                },
+              ],
+              state_mutability: "view",
             },
           ],
         },
@@ -443,109 +820,80 @@ const deployedContracts = {
           name: "constructor",
           inputs: [
             {
-              name: "owner",
+              name: "announcer_address",
               type: "core::starknet::contract_address::ContractAddress",
             },
           ],
         },
         {
           type: "event",
-          name: "openzeppelin_access::ownable::ownable::OwnableComponent::OwnershipTransferred",
+          name: "contracts::stealth_pay::StealthPay::PaymentSent",
           kind: "struct",
           members: [
             {
-              name: "previous_owner",
+              name: "commitment",
+              type: "core::felt252",
+              kind: "key",
+            },
+            {
+              name: "token",
               type: "core::starknet::contract_address::ContractAddress",
-              kind: "key",
-            },
-            {
-              name: "new_owner",
-              type: "core::starknet::contract_address::ContractAddress",
-              kind: "key",
-            },
-          ],
-        },
-        {
-          type: "event",
-          name: "openzeppelin_access::ownable::ownable::OwnableComponent::OwnershipTransferStarted",
-          kind: "struct",
-          members: [
-            {
-              name: "previous_owner",
-              type: "core::starknet::contract_address::ContractAddress",
-              kind: "key",
-            },
-            {
-              name: "new_owner",
-              type: "core::starknet::contract_address::ContractAddress",
-              kind: "key",
-            },
-          ],
-        },
-        {
-          type: "event",
-          name: "openzeppelin_access::ownable::ownable::OwnableComponent::Event",
-          kind: "enum",
-          variants: [
-            {
-              name: "OwnershipTransferred",
-              type: "openzeppelin_access::ownable::ownable::OwnableComponent::OwnershipTransferred",
-              kind: "nested",
-            },
-            {
-              name: "OwnershipTransferStarted",
-              type: "openzeppelin_access::ownable::ownable::OwnableComponent::OwnershipTransferStarted",
-              kind: "nested",
-            },
-          ],
-        },
-        {
-          type: "event",
-          name: "contracts::your_contract::YourContract::GreetingChanged",
-          kind: "struct",
-          members: [
-            {
-              name: "greeting_setter",
-              type: "core::starknet::contract_address::ContractAddress",
-              kind: "key",
-            },
-            {
-              name: "new_greeting",
-              type: "core::byte_array::ByteArray",
-              kind: "key",
-            },
-            {
-              name: "premium",
-              type: "core::bool",
               kind: "data",
             },
             {
-              name: "value",
-              type: "core::option::Option::<core::integer::u256>",
+              name: "amount",
+              type: "core::integer::u256",
+              kind: "data",
+            },
+            {
+              name: "sender",
+              type: "core::starknet::contract_address::ContractAddress",
               kind: "data",
             },
           ],
         },
         {
           type: "event",
-          name: "contracts::your_contract::YourContract::Event",
+          name: "contracts::stealth_pay::StealthPay::PaymentClaimed",
+          kind: "struct",
+          members: [
+            {
+              name: "commitment",
+              type: "core::felt252",
+              kind: "key",
+            },
+            {
+              name: "recipient",
+              type: "core::starknet::contract_address::ContractAddress",
+              kind: "data",
+            },
+            {
+              name: "amount",
+              type: "core::integer::u256",
+              kind: "data",
+            },
+          ],
+        },
+        {
+          type: "event",
+          name: "contracts::stealth_pay::StealthPay::Event",
           kind: "enum",
           variants: [
             {
-              name: "OwnableEvent",
-              type: "openzeppelin_access::ownable::ownable::OwnableComponent::Event",
-              kind: "flat",
+              name: "PaymentSent",
+              type: "contracts::stealth_pay::StealthPay::PaymentSent",
+              kind: "nested",
             },
             {
-              name: "GreetingChanged",
-              type: "contracts::your_contract::YourContract::GreetingChanged",
+              name: "PaymentClaimed",
+              type: "contracts::stealth_pay::StealthPay::PaymentClaimed",
               kind: "nested",
             },
           ],
         },
       ],
       classHash:
-        "0x48982488d0c174566ce66c575b8ab07211f22689acba2abd1a97c83a0f824a4",
+        "0x182b23fcb96ab5756b08d206b704ab281598cc2504df163588b03fdb403b482",
     },
   },
 } as const;

@@ -79,77 +79,182 @@ Scanning every announcement requires an expensive ECDH computation per event. St
 | Wallet Integration | starknet-react + starknet.js |
 | Cryptography | STARK curve ECDH + Poseidon hashing (client-side) |
 | Scaffold | Scaffold-Stark 2 |
+| Styling | Tailwind CSS v3 + daisyUI v4 |
 
 ## Project Structure
 
 ```
-packages/
-  snfoundry/
-    contracts/src/
-      stealth_registry.cairo    # Public key registration
-      stealth_announcer.cairo   # Event emission for scanning
-      stealth_pay.cairo         # Deposit + claim logic
-    contracts/tests/
-      test_registry.cairo       # Contract unit tests
-  nextjs/
-    app/
-      register/page.tsx         # Key generation + on-chain registration
-      send/page.tsx             # Stealth address computation + token send
-      receive/page.tsx          # Scan announcements + claim payments
-    utils/stealth/
-      crypto.ts                 # All cryptographic primitives
-      types.ts                  # TypeScript type definitions
-    hooks/stealth/
-      useStealthContracts.ts    # Custom hooks for contract interaction
+StealthPay/
+├── packages/
+│   ├── snfoundry/                          # Cairo smart contracts & deployment
+│   │   ├── contracts/src/
+│   │   │   ├── stealth_registry.cairo      # Public key registration
+│   │   │   ├── stealth_announcer.cairo     # Event emission for scanning
+│   │   │   └── stealth_pay.cairo           # Deposit + claim logic
+│   │   ├── contracts/tests/
+│   │   │   └── test_registry.cairo         # Contract unit tests
+│   │   ├── scripts-ts/
+│   │   │   └── deploy.ts                   # Deployment script (deploys all 3 contracts)
+│   │   └── .env                            # Deployer credentials (per-network)
+│   └── nextjs/                             # Next.js frontend
+│       ├── app/
+│       │   ├── page.tsx                     # Landing page
+│       │   ├── register/page.tsx            # Key generation + on-chain registration
+│       │   ├── send/page.tsx                # Stealth address computation + token send
+│       │   └── receive/page.tsx             # Scan announcements + claim payments
+│       ├── hooks/stealth/
+│       │   └── useStealthContracts.ts       # Custom hooks for contract interaction
+│       ├── utils/stealth/
+│       │   ├── crypto.ts                    # All cryptographic primitives
+│       │   └── types.ts                     # TypeScript type definitions
+│       ├── scaffold.config.ts               # Network target configuration
+│       └── .env.local                       # RPC provider URLs
+├── WHITEPAPER.md                            # Protocol design document
+└── README.md                                # This file
 ```
 
 ## Getting Started
 
 ### Prerequisites
 
-- Node.js 18+
-- Scarb 2.16+ (Cairo compiler)
-- A Starknet wallet (Argent X or Braavos)
+| Tool | Version | Installation |
+|------|---------|-------------|
+| **Node.js** | ≥ 18 | [nodejs.org](https://nodejs.org/) |
+| **Yarn** | v1 or v2+ | `npm install -g yarn` |
+| **Scarb** | **2.13.2** | [via starkup](https://docs.starknet.io/) |
+| **Starknet Foundry** | Latest | [via starkup](https://docs.starknet.io/) |
+| **Starknet Wallet** | — | [Argent X](https://www.argent.xyz/argent-x/) or [Braavos](https://braavos.app/) |
 
-### Installation
+> ⚠️ **Scarb version matters.** The Sepolia sequencer uses Cairo 2.13.2 to compile Sierra → CASM. Using a different Scarb version locally will produce a different CASM hash, causing `Transaction execution error (code 41)` on deployment. Pin to **2.13.2** exactly.
+
+To install Scarb and Starknet Foundry together:
 
 ```bash
-git clone https://github.com/yourusername/stealthpay-starknet.git
-cd stealthpay-starknet
+curl https://get.starkup.dev | sh
+```
+
+### Clone & Install
+
+```bash
+git clone https://github.com/yourusername/StealthPay.git
+cd StealthPay
 yarn install
 ```
 
-### Local Development
+### Option A: Local Development (Devnet)
+
+Run each command in a **separate terminal**:
 
 ```bash
-# Terminal 1: Start local devnet
+# Terminal 1 — Start local Starknet devnet
 yarn chain
 
-# Terminal 2: Deploy contracts
+# Terminal 2 — Compile & deploy contracts to devnet
 yarn deploy
 
-# Terminal 3: Start frontend
+# Terminal 3 — Start the Next.js frontend
 yarn start
 ```
 
 Open [http://localhost:3000](http://localhost:3000) and connect your wallet.
 
-### Sepolia Testnet
+> **Note:** On devnet, the scaffold provides pre-funded burner wallets automatically.
 
-1. Configure `packages/snfoundry/.env` with your deployer credentials
-2. Set `targetNetworks: [chains.sepolia]` in `packages/nextjs/scaffold.config.ts`
-3. Deploy: `yarn deploy --network sepolia`
+### Option B: Sepolia Testnet
+
+Standard scaffold deployment tools (`yarn deploy --network sepolia`) can struggle with CASM hash computation and v2/v3 transaction typing on testnets. StealthPay uses a **custom direct deployment script** that enforces v3 transactions (STRK for gas) and handles the sequential dependency injection of contract addresses.
+
+#### 1. Configure the deployment script
+
+Edit `deploy-sepolia-direct.ts` in the project root with your deployer credentials and a dedicated RPC endpoint (Alchemy or Infura recommended over public nodes).
+
+#### 2. Fund your deployer wallet
+
+Ensure your deployer wallet has **STRK** tokens — the script forces v3 transactions which use STRK for gas (not ETH).
+
+#### 3. Deploy contracts
+
+```bash
+npx ts-node deploy-sepolia-direct.ts
+```
+
+The script deploys **StealthAnnouncer** → **StealthRegistry** → **StealthPay** in order, automatically passing the announcer address into the StealthPay constructor.
+
+#### 4. Update deployed contract addresses
+
+Copy the outputted contract addresses from the deploy script and update `packages/nextjs/contracts/deployedContracts.ts`.
+
+#### 5. Configure the frontend
+
+Create/edit `packages/nextjs/.env.local`:
+
+```env
+NEXT_PUBLIC_SEPOLIA_PROVIDER_URL=https://starknet-sepolia.g.alchemy.com/starknet/version/rpc/v0_9/YOUR_KEY
+```
+
+In `packages/nextjs/scaffold.config.ts`, ensure:
+
+```typescript
+targetNetworks: [chains.sepolia],
+```
+
+#### 6. Start the frontend
+
+```bash
+yarn start
+```
+
+### Running Tests
+
+```bash
+# Run Cairo contract tests
+cd packages/snfoundry && snforge test
+
+# Or from root
+yarn test
+```
 
 ## Usage
 
-### 1. Register (Recipient)
-Navigate to `/register`. Generate your stealth keypairs and publish them on-chain. This is a one-time setup.
+### 1. Register (Recipient — one-time setup)
+
+Navigate to [`/register`](http://localhost:3000/register):
+
+1. Click **"Generate Keys"** — creates your spending + viewing keypairs (stored locally in your browser's localStorage)
+2. Click **"Register on Starknet"** — publishes the x-coordinates of your public keys to the on-chain `StealthRegistry`
+
+> ⚠️ **Demo note:** Keys are stored in localStorage for this testnet demo. In production, keys should be derived from your wallet signature or stored in encrypted storage.
 
 ### 2. Send (Sender)
-Navigate to `/send`. Enter the recipient's Starknet address, select a token, enter the amount. The app looks up their registered keys, computes a stealth address, and sends the tokens.
+
+Navigate to [`/send`](http://localhost:3000/send):
+
+1. Enter the **recipient's Starknet address** (they must have registered)
+2. Select a **token** (STRK or ETH)
+3. Enter the **amount**
+4. Click **"Send Privately"**
+
+The app automatically:
+- Looks up the recipient's registered public keys from the registry
+- Computes a stealth address + ephemeral key client-side
+- Executes a multicall that approves the token transfer and sends in one transaction
 
 ### 3. Receive (Recipient)
-Navigate to `/receive`. Click "Scan for Payments" to scan on-chain announcements using your viewing key. Found payments can be claimed to any address with a single click.
+
+Navigate to [`/receive`](http://localhost:3000/receive):
+
+1. Click **"Scan for Payments"** — scans on-chain `Announcement` events using your viewing key
+2. Review the list of detected payments (amount, token, commitment)
+3. Click **"Claim"** on any payment — signs a proof with the derived stealth private key and sends funds to your connected wallet
+
+## Design Choices
+
+StealthPay is built on Scaffold-Stark 2 but makes several intentional architectural decisions to support the stealth address protocol:
+
+- **Custom contract hooks** — We use lightweight wrappers (`useStealthReadContract`, `useStealthWriteContract`) instead of the scaffold's generic hooks. Stealth contracts require runtime contract name resolution that bypasses the scaffold's compile-time type constraints, giving us more flexibility for dynamic contract interactions.
+- **Raw RPC event scanning** — The Receive page fetches `Announcement` events directly via `RpcProvider.getEvents()` rather than scaffold event hooks. Stealth scanning requires custom parsing of raw event data followed by client-side ECDH cryptography on each event — a processing pipeline that doesn't fit the scaffold's event abstraction.
+- **Direct multicall construction** — The Send page builds approve + send calls manually using `starknet.js` `Contract.populate()` and `useTransactor`, rather than the scaffold write hooks. This allows us to batch the ERC-20 approval and stealth payment into a single atomic multicall transaction.
+- **Client-side cryptography** — All stealth address math (ECDH shared secrets, key derivation, ECDSA signing) runs entirely in the browser using `starknet.js` EC utilities. The Cairo contracts only verify proofs — they never touch private keys or perform complex EC operations.
 
 ## Security Model
 
@@ -158,11 +263,14 @@ Navigate to `/receive`. Click "Scan for Payments" to scan on-chain announcements
 - **ECDSA signatures** over the Poseidon commitment prove ownership of the stealth private key during claims.
 - **No trusted third parties.** All cryptography runs client-side. Contracts only verify proofs.
 
+## Hackathon
+
+Built for the **Starknet Re{define} Hackathon 2026** — Privacy + Bitcoin Track.
+
 ## Inspiration
 
 - [EIP-5564: Stealth Addresses](https://eips.ethereum.org/EIPS/eip-5564)
 - [Vitalik Buterin: An Incomplete Guide to Stealth Addresses](https://vitalik.eth.limo/general/2023/01/20/stealth.html)
-- [Umbra Protocol](https://www.umbra.cash/) (Ethereum implementation)
 
 ## License
 

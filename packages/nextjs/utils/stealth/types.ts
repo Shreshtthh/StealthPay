@@ -30,6 +30,8 @@ export interface StealthAddressResult {
     viewTag: string;
     /** The stealth public key (needed by recipient to verify & claim) */
     stealthPubKey: Point;
+    /** The shared secret x-coordinate — used for encrypted IPFS memo derivation */
+    sharedSecretX: string;
 }
 
 /** An Announcement event parsed from on-chain. */
@@ -41,6 +43,8 @@ export interface Announcement {
     amount: bigint;
     caller: string;
     blockNumber?: number;
+    /** IPFS CID of the encrypted memo (felt252 on-chain, 0 = no memo) */
+    ipfsCid?: string;
 }
 
 /** A detected stealth payment that the user can claim. */
@@ -51,6 +55,12 @@ export interface StealthPayment {
     stealthPrivKey: string;
     stealthPubKey: Point;
     blockNumber?: number;
+    /** Decrypted memo from IPFS, if one was attached */
+    memo?: string;
+    /** IPFS CID felt for memo retrieval */
+    ipfsCid?: string;
+    /** Shared secret x-coordinate for memo decryption */
+    sharedSecretX?: string;
 }
 
 /** ECDSA signature components for claiming a payment. */

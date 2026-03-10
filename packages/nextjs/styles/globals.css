@@ -385,3 +385,91 @@
     right: 0;
   }
 }
+
+/* ======================================= */
+/* StealthPay custom utilities             */
+/* ======================================= */
+
+@layer utilities {
+  /* Gradient text for headings */
+  .text-gradient {
+    background: linear-gradient(135deg, #8b45fd 0%, #42d2f1 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Glassmorphism card overlay */
+  .glass-card {
+    background: rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(92, 79, 229, 0.25);
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .glass-card:hover {
+    border-color: rgba(139, 69, 253, 0.5);
+    box-shadow: 0 4px 30px rgba(139, 69, 253, 0.1);
+  }
+
+  /* Step indicator circle */
+  .step-circle {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 9999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.875rem;
+    background: linear-gradient(135deg, #8b45fd 0%, #42d2f1 100%);
+    color: #fff;
+    flex-shrink: 0;
+  }
+
+  /* Pulsing status indicator */
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 9999px;
+    display: inline-block;
+    animation: pulse-dot 2s ease-in-out infinite;
+  }
+
+  .status-dot-success { background: #34eeb6; }
+  .status-dot-warning { background: #ffcf72; }
+  .status-dot-error { background: #ff8863; }
+
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.85); }
+  }
+
+  /* Fade-in-up animation */
+  .animate-fade-in {
+    animation: fadeInUp 0.5s ease-out both;
+  }
+
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Stagger children */
+  .stagger > *:nth-child(1) { animation-delay: 0ms; }
+  .stagger > *:nth-child(2) { animation-delay: 100ms; }
+  .stagger > *:nth-child(3) { animation-delay: 200ms; }
+  .stagger > *:nth-child(4) { animation-delay: 300ms; }
+
+  /* Subtle inner glow on focus */
+  .input-glow:focus-within {
+    box-shadow: 0 0 0 2px rgba(139, 69, 253, 0.25);
+  }
+
+  /* Section divider */
+  .divider-gradient {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(139, 69, 253, 0.3), transparent);
+  }
+}

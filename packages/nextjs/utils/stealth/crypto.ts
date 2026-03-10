@@ -327,6 +327,7 @@ export function computeStealthAddress(
         stealthCommitment,
         viewTag,
         stealthPubKey,
+        sharedSecretX: sharedSecret.x,
     };
 }
 
@@ -388,6 +389,8 @@ export function scanAnnouncements(
                 stealthPrivKey,
                 stealthPubKey: expectedStealthPub,
                 blockNumber: ann.blockNumber,
+                ipfsCid: ann.ipfsCid,
+                sharedSecretX: sharedSecret.x,
             });
         } catch {
             // Skip malformed announcements

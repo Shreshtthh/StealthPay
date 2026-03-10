@@ -60,6 +60,10 @@ const deployedContracts = {
                   name: "amount",
                   type: "core::integer::u256",
                 },
+                {
+                  name: "ipfs_cid",
+                  type: "core::felt252",
+                },
               ],
               outputs: [],
               state_mutability: "external",
@@ -104,6 +108,11 @@ const deployedContracts = {
             {
               name: "caller",
               type: "core::starknet::contract_address::ContractAddress",
+              kind: "data",
+            },
+            {
+              name: "ipfs_cid",
+              type: "core::felt252",
               kind: "data",
             },
           ],
@@ -308,6 +317,10 @@ const deployedContracts = {
                   name: "amount",
                   type: "core::integer::u256",
                 },
+                {
+                  name: "ipfs_cid",
+                  type: "core::felt252",
+                },
               ],
               outputs: [],
               state_mutability: "external",
@@ -453,7 +466,7 @@ const deployedContracts = {
   sepolia: {
     StealthAnnouncer: {
       address:
-        "0x71bd0f74c0ee290937ed687b5d8da9cc7b3d70ba2df1161492b74d5022b98dc",
+        "0x18da9e44c2f6a26e8972bde2e91eeda3ad9dad80bd7ac6817ec32a1b5c226d4",
       abi: [
         {
           type: "impl",
@@ -506,6 +519,10 @@ const deployedContracts = {
                   name: "amount",
                   type: "core::integer::u256",
                 },
+                {
+                  name: "ipfs_cid",
+                  type: "core::felt252",
+                },
               ],
               outputs: [],
               state_mutability: "external",
@@ -552,6 +569,11 @@ const deployedContracts = {
               type: "core::starknet::contract_address::ContractAddress",
               kind: "data",
             },
+            {
+              name: "ipfs_cid",
+              type: "core::felt252",
+              kind: "data",
+            },
           ],
         },
         {
@@ -572,7 +594,7 @@ const deployedContracts = {
     },
     StealthRegistry: {
       address:
-        "0x166f89e2e9b0499a28fbde2dc754c72ca986456101cc5481b301d4724d3495c",
+        "0x395c85e22f637e87571b997176ee5e10c1150642091204407b07e25262b74a8",
       abi: [
         {
           type: "impl",
@@ -687,7 +709,7 @@ const deployedContracts = {
     },
     StealthPay: {
       address:
-        "0x7e16306f400c178dea90be2d01460cd217d655b07af495e1049a51ae323585a",
+        "0x3746f0ba6ea4b9399c70cd6ff0feb8e16775366b7024c75ee2b02365bb6e9c3",
       abi: [
         {
           type: "impl",
@@ -753,6 +775,10 @@ const deployedContracts = {
                 {
                   name: "amount",
                   type: "core::integer::u256",
+                },
+                {
+                  name: "ipfs_cid",
+                  type: "core::felt252",
                 },
               ],
               outputs: [],

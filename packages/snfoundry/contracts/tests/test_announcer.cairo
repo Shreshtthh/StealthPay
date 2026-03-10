@@ -30,7 +30,8 @@ fn test_announce_emits_event() {
     let amount: u256 = 1000;
 
     cheat_caller_address(announcer_addr, TEST_SENDER, CheatSpan::TargetCalls(1));
-    dispatcher.announce(ephemeral_pub_x, ephemeral_pub_y, commitment, view_tag, token, amount);
+    let ipfs_cid: felt252 = 0x4950_4653; // test CID value
+    dispatcher.announce(ephemeral_pub_x, ephemeral_pub_y, commitment, view_tag, token, amount, ipfs_cid);
 
     spy
         .assert_emitted(
@@ -46,6 +47,7 @@ fn test_announce_emits_event() {
                             token,
                             amount,
                             caller: TEST_SENDER,
+                            ipfs_cid,
                         },
                     ),
                 ),

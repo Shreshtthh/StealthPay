@@ -10,6 +10,7 @@ pub trait IStealthAnnouncer<TContractState> {
         view_tag: felt252,
         token: starknet::ContractAddress,
         amount: u256,
+        ipfs_cid: felt252,
     );
 }
 
@@ -29,6 +30,7 @@ pub mod StealthAnnouncer {
     /// The core announcement event. Recipients scan these to discover payments.
     /// `view_tag` is indexed (#[key]) so frontends can filter by tag via RPC,
     /// avoiding expensive ECDH computation on every event.
+    /// `ipfs_cid` stores a truncated IPFS CID for an encrypted memo (0 = no memo).
     #[derive(Drop, starknet::Event)]
     pub struct Announcement {
         #[key]
@@ -40,6 +42,7 @@ pub mod StealthAnnouncer {
         pub token: ContractAddress,
         pub amount: u256,
         pub caller: ContractAddress,
+        pub ipfs_cid: felt252,
     }
 
     // ───────────────────────── Storage ─────────────────────────
@@ -59,6 +62,7 @@ pub mod StealthAnnouncer {
             view_tag: felt252,
             token: ContractAddress,
             amount: u256,
+            ipfs_cid: felt252,
         ) {
             self
                 .emit(
@@ -70,6 +74,7 @@ pub mod StealthAnnouncer {
                         token,
                         amount,
                         caller: get_caller_address(),
+                        ipfs_cid,
                     },
                 );
         }

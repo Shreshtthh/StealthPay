@@ -85,7 +85,7 @@ fn test_send_and_verify_deposit() {
 
     // Send tokens
     cheat_caller_address(stealth_pay_addr, OWNER, CheatSpan::TargetCalls(1));
-    dispatcher.send(commitment, 0xaabb, 0xccdd, 42, strk_addr, amount);
+    dispatcher.send(commitment, 0xaabb, 0xccdd, 42, strk_addr, amount, 0x0);
 
     // Verify deposit was stored
     let (token, stored_amount, sender, claimed) = dispatcher.get_deposit(commitment);
@@ -113,11 +113,11 @@ fn test_duplicate_commitment_reverts() {
     cheat_caller_address(strk_addr, OWNER, CheatSpan::TargetCalls(1));
     erc20.approve(stealth_pay_addr, amount);
     cheat_caller_address(stealth_pay_addr, OWNER, CheatSpan::TargetCalls(1));
-    dispatcher.send(commitment, 0xaabb, 0xccdd, 42, strk_addr, amount);
+    dispatcher.send(commitment, 0xaabb, 0xccdd, 42, strk_addr, amount, 0x0);
 
     // Second send with same commitment should fail
     cheat_caller_address(strk_addr, OWNER, CheatSpan::TargetCalls(1));
     erc20.approve(stealth_pay_addr, amount);
     cheat_caller_address(stealth_pay_addr, OWNER, CheatSpan::TargetCalls(1));
-    dispatcher.send(commitment, 0xeeff, 0x1122, 43, strk_addr, amount);
+    dispatcher.send(commitment, 0xeeff, 0x1122, 43, strk_addr, amount, 0x0);
 }

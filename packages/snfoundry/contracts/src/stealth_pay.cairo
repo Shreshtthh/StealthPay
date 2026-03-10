@@ -12,6 +12,7 @@ pub trait IStealthPay<TContractState> {
         view_tag: felt252,
         token: starknet::ContractAddress,
         amount: u256,
+        ipfs_cid: felt252,
     );
 
     /// Claim a stealth payment. The recipient proves ownership of the stealth private key
@@ -108,6 +109,7 @@ pub mod StealthPay {
             view_tag: felt252,
             token: ContractAddress,
             amount: u256,
+            ipfs_cid: felt252,
         ) {
             // Validate inputs
             assert(amount > 0, 'Amount must be > 0');
@@ -128,11 +130,11 @@ pub mod StealthPay {
             self.deposit_claimed.write(stealth_commitment, false);
             self.deposit_exists.write(stealth_commitment, true);
 
-            // 3. Call the announcer to emit the Announcement event
+            // 3. Call the announcer to emit the Announcement event (now with IPFS CID)
             let announcer = IStealthAnnouncerDispatcher {
                 contract_address: self.announcer.read(),
             };
-            announcer.announce(ephemeral_pub_x, ephemeral_pub_y, stealth_commitment, view_tag, token, amount);
+            announcer.announce(ephemeral_pub_x, ephemeral_pub_y, stealth_commitment, view_tag, token, amount, ipfs_cid);
 
             // 4. Emit our own PaymentSent event
             self.emit(PaymentSent { commitment: stealth_commitment, token, amount, sender: caller });

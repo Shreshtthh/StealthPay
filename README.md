@@ -6,6 +6,8 @@
 ![Cairo](https://img.shields.io/badge/Language-Cairo%202-orange)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
+📄 **[Read the Whitepaper](WHITEPAPER.md)** — Full protocol design, cryptographic primitives, and security analysis.
+
 ## The Problem
 
 Every transaction on Starknet is public. When Alice sends tokens to Bob, anyone can see:
@@ -50,41 +52,87 @@ StealthPay consists of three Cairo smart contracts and a Next.js frontend with c
 | **StealthAnnouncer** | Emits `Announcement` events with indexed view tags and IPFS CIDs |
 | **StealthPay** | Handles deposits (send) and withdrawals (claim) with ECDSA signature verification |
 
-### Cryptographic Flow
+```mermaid
+graph LR
+    subgraph On-Chain ["Cairo Smart Contracts"]
+        SR["StealthRegistry\nregister / get_meta_address"]
+        SA["StealthAnnouncer\nemit Announcement events"]
+        SP["StealthPay\nsend / claim / get_deposit"]
+    end
 
+    subgraph Off-Chain ["Next.js Frontend"]
+        FE["Client-Side Crypto\nECDH + Poseidon + AES-GCM"]
+        IPFS["IPFS via Pinata\nEncrypted Memos"]
+    end
+
+    FE -->|"register keys"| SR
+    FE -->|"lookup keys"| SR
+    FE -->|"approve + send multicall"| SP
+    SP -->|"announce(...)"| SA
+    FE -->|"scan events"| SA
+    FE -->|"claim with ECDSA sig"| SP
+    FE <-->|"upload / fetch memo"| IPFS
 ```
-SENDER                                 RECIPIENT
-------                                 ---------
-1. Look up recipient's                 1. Generate spending keypair (s, S)
-   public keys (S, V)                     and viewing keypair (v, V)
-   from StealthRegistry                2. Register S.x and V.x on-chain
 
-2. Generate ephemeral keypair (r, R)
+### Protocol Flow
 
-3. Compute shared secret:             3. Scan Announcement events
-   sh = hash(r * V)                      For each: sh = hash(v * R)
+```mermaid
+sequenceDiagram
+    participant Bob as Bob (Recipient)
+    participant Registry as StealthRegistry
+    participant Alice as Alice (Sender)
+    participant IPFS as IPFS
+    participant Pay as StealthPay
+    participant Announcer as StealthAnnouncer
 
-4. Compute stealth public key:         4. Check: does hash(sh) match
-   P_stealth = S + sh*G                    the view tag? (fast filter)
+    Note over Bob: One-time setup
+    Bob->>Bob: Generate spending (s,S) + viewing (v,V) keypairs
+    Bob->>Registry: register(S.x, V.x)
 
-5. Encrypt Memo (AES-GCM):             5. Fetch IPFS CID
-   ciphertext = encrypt(memo, sh)         Decrypt memo using shared secret
-   Upload ciphertext to IPFS
+    Note over Alice: Sending a private payment
+    Alice->>Registry: get_meta_address(Bob)
+    Registry-->>Alice: (S.x, V.x)
+    Alice->>Alice: Generate ephemeral keypair (r, R)
+    Alice->>Alice: Shared secret sh = Poseidon(r * V)
+    Alice->>Alice: P_stealth = S + sh*G
+    Alice->>Alice: commitment = Poseidon(P_stealth.x)
+    Alice->>Alice: Encrypt memo with AES-GCM(sh)
+    Alice->>IPFS: Upload encrypted memo
+    IPFS-->>Alice: CID
+    Alice->>Pay: send(commitment, R, view_tag, token, amount, cid)
+    Pay->>Pay: Escrow tokens
+    Pay->>Announcer: announce(...)
+    Announcer->>Announcer: Emit Announcement event
 
-6. Compute commitment:                 6. Compute P_stealth = S + sh*G
-   c = poseidon(P_stealth.x)              Verify commitment matches
-
-7. Call StealthPay.send()              7. Derive stealth private key:
-   with (c, R, view_tag, cid, etc)        p_stealth = s + sh (mod n)
-
-                                       8. Sign the commitment with p_stealth
-                                       9. Call StealthPay.claim()
+    Note over Bob: Scanning for payments
+    Bob->>Announcer: Fetch Announcement events
+    Bob->>Bob: For each event: sh = Poseidon(v * R)
+    Bob->>Bob: Check view tag (skip 255/256)
+    Bob->>Bob: Verify commitment match
+    Bob->>IPFS: Fetch + decrypt memo
+    Bob->>Bob: Derive stealth private key
+    Bob->>Bob: ECDSA sign commitment
+    Bob->>Pay: claim(commitment, P.x, sig_r, sig_s, recipient)
+    Pay->>Pay: Verify signature + transfer tokens
 ```
 
 ### O(1) Client-Side Execution via View Tags
 
 * **The Mechanism:** To prevent the recipient's browser from crashing while scanning thousands of transactions, StealthPay implements a 1-byte "View Tag" derived from the ECDH shared secret.
 * **The Privacy Guarantee:** When scanning the chain, the recipient computes the shared secret and extracts the view tag. If the tag doesn't match the one in the emitted event, the client immediately discards it. This eliminates the need to perform heavy Elliptic Curve point additions and Poseidon hashing for ~99.6% (255/256) of irrelevant transactions, ensuring the protocol remains lightweight and production-ready in a browser environment without leaking static identifiers.
+
+```mermaid
+flowchart TD
+    A["Fetch all Announcement events"] --> B["For each event"]
+    B --> C["Compute ECDH shared secret\nsh = Poseidon(v * R)"]
+    C --> D{"View tag match?"}
+    D -->|"No (99.6%)"| E["Skip — discard event"]
+    D -->|"Yes (0.4%)"| F["Compute P_stealth = S + sh*G"]
+    F --> G{"Commitment match?"}
+    G -->|No| E
+    G -->|Yes| H["Payment found! Derive stealth private key"]
+    E --> B
+```
 
 ## Tech Stack
 

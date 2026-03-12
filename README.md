@@ -134,6 +134,23 @@ flowchart TD
     E --> B
 ```
 
+## Why Stealth Addresses, Not a Mixer?
+
+Protocols like Tornado Cash are the most well-known approach to blockchain privacy. Mixers work by pooling deposits from many users into a single contract and letting each user withdraw the same fixed amount to a fresh address. While effective at breaking the transaction graph, mixers carry fundamental limitations that stealth addresses avoid entirely:
+
+| | Mixer (e.g. Tornado Cash) | StealthPay (Stealth Addresses) |
+|---|---|---|
+| **Architecture** | Shared anonymity pool — all users deposit into and withdraw from the same contract | No pool at all — each payment lands at a unique one-time address |
+| **Denominations** | Fixed (0.1, 1, 10, 100 ETH). Arbitrary amounts require splitting across multiple deposits | Any amount, any ERC-20 token, in a single transaction |
+| **User flow** | Deposit → wait hours/days for anonymity → withdraw with a secret note | Send → recipient claims. No waiting period required |
+| **Recipient experience** | Recipient must be online to generate a deposit note *before* the sender can pay | Recipient registers once; sender can pay at any time without coordination |
+| **On-chain footprint** | All deposits and withdrawals route through a single, well-known contract — easy to flag | Funds move directly from sender to a stealth address. No mixer contract in the path |
+| **Regulatory posture** | Mixer contracts have been sanctioned (OFAC, Aug 2022). Interacting with them can taint an address | Stealth addresses are a *payment mechanism*, not a mixing service. No shared pool, no commingling of funds |
+| **Composability** | Funds are locked in the mixer contract and can't interact with DeFi until withdrawn | Stealth addresses are normal Starknet addresses — funds can be used in any protocol immediately |
+| **Privacy scope** | Hides the *link* between deposit and withdrawal, but the deposit itself is publicly visible going *into* a known mixer | Hides the *recipient*. The payment itself looks like a normal transfer to a new address |
+
+**In short:** Mixers hide where money *went*. Stealth addresses hide who *received* it. StealthPay gives recipients financial privacy without asking them to interact with a sanctioned pool, wait for an anonymity set to build, or restrict themselves to fixed denominations.
+
 ## Tech Stack
 
 | Layer | Technology |
@@ -327,11 +344,15 @@ StealthPay is built on Scaffold-Stark 2 but makes several intentional architectu
 - **Claim destination.** The recipient can claim funds to any wallet, including a freshly generated one with no prior history.
 - **Payment Context:** Any attached memos or invoices are AES-encrypted and stored on IPFS. Only the opaque CID is logged on-chain, keeping the context hidden from observers while remaining permanently accessible to the recipient.
 
-### What StealthPay does NOT hide
+### What StealthPay does NOT hide (and how we solve it)
 
 - **Sender identity.** The sender's address is visible in the `send` transaction.
+  - 🔧 **Solution: Relayer network.** A relayer submits the `send()` transaction on the sender's behalf, so the sender's address never appears on-chain. The sender pays the relayer off-chain or through a separate privacy-preserving channel. *(Planned — see [Whitepaper Section8.2](WHITEPAPER.md))*
 - **Payment amount and token type.** The deposit amount and ERC-20 token address are recorded on-chain in both the deposit struct and the `Announcement` event.
-- **Timing.** Transaction timestamps are public.
+  - 🔧 **Solution (today): Standardized denominations.** Sending in round amounts (10, 100, 1000 STRK) creates a large anonymity set, making deposit-withdrawal correlation statistically infeasible.
+  - 🔧 **Solution (roadmap): Pedersen commitments.** A commitment `C = r*G + v*H` hides the amount on-chain entirely. The recipient provides a zero-knowledge range proof during `claim()` to prove the amounts match without revealing them. *(See [Whitepaper Section 8.3](WHITEPAPER.md))*
+- **Timing.** Transaction timestamps are public. An observer could correlate a `send()` and a `claim()` that happen close together.
+  - 🔧 **Solution: Delayed claiming.** Recipients can wait before claiming, breaking the temporal link. Because funds are held in escrow with no expiry, there is no deadline pressure. Combining delayed claims with standardized denominations makes timing correlation ineffective.
 
 ### Amount correlation and mitigation
 

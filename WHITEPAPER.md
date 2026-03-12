@@ -36,6 +36,26 @@ Privacy on blockchains has been addressed through several approaches:
 | TEE-based solutions | Trusted hardware assumptions |
 | Full ZK protocols (Aztec) | High complexity, separate execution environment |
 
+#### 1.2.1 Why Not a Mixer?
+
+Mixers (most notably Tornado Cash) are the most widely recognized tool for blockchain privacy. They operate by aggregating deposits from many users into a common pool contract and allowing each depositor to later withdraw the same fixed denomination to a new address, using a zero-knowledge proof to demonstrate inclusion in the pool without revealing which deposit is theirs.
+
+While effective at breaking the on-chain link between deposit and withdrawal, the mixer architecture introduces several fundamental limitations that stealth addresses do not share:
+
+**1. Fixed denominations destroy flexibility.** Mixers require users to deposit in exact, pre-defined amounts (e.g., 0.1, 1, 10, 100 ETH). Sending an arbitrary amount like 47.3 STRK would require routing through multiple denomination pools, each with its own deposit and withdrawal transaction, increasing cost, complexity, and the surface for timing correlation. Stealth addresses impose no denomination constraints — any amount, of any ERC-20 token, is sent in a single transaction.
+
+**2. Shared pool creates regulatory surface area.** A mixer's on-chain footprint is a single, identifiable contract through which all users' funds are commingled. This concentration makes it trivial for regulators to sanction the pool contract itself (as OFAC did with Tornado Cash in August 2022) and for compliance tools to flag any address that has interacted with it. Stealth addresses involve no shared pool and no commingling. Each payment is a direct transfer from the sender to a unique one-time address — indistinguishable from a normal transaction to a new wallet.
+
+**3. Anonymity requires waiting.** A mixer's privacy guarantee depends on the size of its anonymity set: the number of deposits that have been made since the user deposited. If a user deposits and withdraws within minutes, the small anonymity set makes correlation trivial. This forces users to wait hours, days, or longer — creating friction and capital lockup. Stealth addresses provide immediate, per-transaction privacy. The recipient can claim as soon as the transaction confirms.
+
+**4. Coordination burden on the recipient.** To receive a payment through a mixer, the recipient must first generate a deposit note and share it securely with the sender out-of-band. The sender then deposits funds, and the recipient later withdraws. With stealth addresses, the recipient registers their meta-address once and can receive unlimited payments from any sender without further coordination.
+
+**5. No DeFi composability.** Funds inside a mixer pool are inert — they cannot be staked, lent, or used as collateral until withdrawn. Stealth addresses are standard blockchain addresses. Funds received at a stealth address can immediately interact with any DeFi protocol on Starknet.
+
+**6. Different privacy target.** A mixer hides *which deposit corresponds to which withdrawal* — it obscures the flow of funds. A stealth address hides *who received the payment* — it obscures the recipient's identity. For the payment use case (salaries, invoices, donations), recipient privacy is the primary requirement, and stealth addresses address it directly without the overhead of a mixing pool.
+
+In summary, mixers are designed for *self-service anonymization* of existing holdings, while stealth addresses are designed for *private payments* between two parties. StealthPay targets the payment use case directly, with lower friction, no regulatory exposure, and full composability on Starknet.
+
 ### 1.3 Stealth Addresses: A Pragmatic Middle Ground
 
 Stealth addresses offer a lightweight privacy primitive that breaks the link between sender and recipient without requiring a separate privacy chain or complex infrastructure. First formalized for Ethereum as EIP-5564, stealth addresses enable a sender to derive a fresh, one-time address for each payment to a recipient. Only the recipient can detect and claim payments sent to these addresses.
@@ -229,11 +249,15 @@ For a chain with 10,000 announcements, the recipient still performs 10,000 light
 - **Claim destination**: The recipient can claim to any address, including a fresh one
 - **Payment Context**: Any attached memos or invoices are AES-encrypted and stored on IPFS. Only the opaque CID is logged on-chain, keeping the context hidden from observers while remaining permanently accessible to the recipient.
 
-### 6.2 What StealthPay Does NOT Hide
+### 6.2 What StealthPay Does NOT Hide (and Mitigations)
 
-- **Sender identity**: The sender's address is visible in the `send` transaction
-- **Payment amount**: The token and amount are recorded in the deposit and announcement
-- **Timing**: Transaction timestamps are public
+- **Sender identity**: The sender's address is visible in the `send` transaction.
+  - *Mitigation (§8.2):* A **relayer network** allows a third-party relayer to submit the `send()` transaction on the sender's behalf. The sender's address never appears on-chain. The sender compensates the relayer through an off-chain or privacy-preserving payment channel.
+- **Payment amount**: The token and amount are recorded in the deposit and announcement.
+  - *Mitigation (today):* **Standardized denominations** (e.g. 10, 100, 1000 STRK) create a large anonymity set among concurrent deposits, making statistical correlation between deposits and withdrawals infeasible.
+  - *Mitigation (§8.3):* **Pedersen commitments** (`C = r*G + v*H`) will allow amounts to be hidden on-chain entirely. The recipient proves correctness via a zero-knowledge range proof during `claim()`, without revealing the actual value.
+- **Timing**: Transaction timestamps are public, enabling temporal correlation between `send()` and `claim()` transactions.
+  - *Mitigation:* **Delayed claiming.** Because escrowed deposits have no expiry, recipients can introduce an arbitrary delay before claiming. Combined with standardized denominations and a growing number of protocol users, timing analysis becomes statistically unreliable.
 
 ### 6.3 Threat Model
 
